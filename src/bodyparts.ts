@@ -858,15 +858,7 @@ export function createAnatomy(presentation: "male" | "female" = "male") {
         }
         geometry.applyMatrix4(sourceMesh.matrixWorld);
         const positions = geometry.getAttribute("position");
-        const normals = geometry.getAttribute("normal");
         const point = new THREE.Vector3();
-        const normal = new THREE.Vector3();
-        for (let i = 0; i < positions.count; i++) {
-          point.fromBufferAttribute(positions, i);
-          if (normals) normal.fromBufferAttribute(normals, i);
-          positions.setXYZ(i, point.x, point.y, point.z);
-          if (normals) normals.setXYZ(i, normal.x, normal.y, normal.z);
-        }
         if (bakedSkin) {
           // Remove the original head from rendering AND surface picking.
           const indices = geometry.getIndex()!;

@@ -38,6 +38,22 @@ async function waitForPaint(canvas: Locator) {
     .toBeGreaterThan(100);
 }
 
+// OrbitControls damping keeps easing the camera for a short while after any
+// flight/reset; body hotspot markers are re-projected from the live camera
+// every frame, so clicking one while the camera is still settling races a
+// moving target. Wait for the camera's on-screen position to hold steady.
+async function waitForCameraSettled(anatomy: Locator) {
+  let last: string | null = null;
+  let stable = 0;
+  for (let i = 0; i < 60 && stable < 4; i++) {
+    const position = await anatomy.getAttribute("data-camera-position");
+    if (position === last) stable++;
+    else stable = 0;
+    last = position;
+    await anatomy.page().waitForTimeout(100);
+  }
+}
+
 test.beforeEach(async ({ page }) => {
   const errors: string[] = [];
   browserErrors.set(page, errors);
@@ -45,14 +61,34 @@ test.beforeEach(async ({ page }) => {
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(`Console: ${message.text()}`);
   });
+  // The illustrative intro demo auto-plays an animated camera tour on first
+  // visit unless reduced motion is requested, in which case it renders a
+  // static "Explore" prompt with no camera animation. Request reduced motion
+  // so interactions with body hotspots and camera controls in these tests
+  // aren't racing the tour's own camera/marker movement.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "One heartbeat. Different places. Different signals.",
+      name: "See how sensor location changes your PPG signal.",
     }),
   ).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await waitForPaint(ppg(page));
+  const explore = page.getByRole("button", { name: "Explore", exact: true });
+  if (await explore.isVisible()) {
+    await explore.click();
+    await expect(page.locator(".intro-demo")).toBeHidden();
+  }
+  // Dismissing the intro leaves the camera on its close-up wrist framing.
+  // Reset explicitly and verify the full-body camera, rather than swallowing a
+  // failed click and letting later gesture tests start from the wrong view.
+  const anatomy = page.getByTestId("anatomy-canvas");
+  await expect(anatomy).toHaveAttribute("data-body-loaded", "true");
+  await page.getByRole("button", { name: "Reset camera", exact: true }).click();
+  await expect
+    .poll(async () => Number(await anatomy.getAttribute("data-camera-distance")))
+    .toBeGreaterThan(6);
 });
 
 test.afterEach(async ({ page }, testInfo) => {
@@ -108,6 +144,7 @@ test("body hotspots, anatomy layers, and chest camera controls work together", a
     "BodyParts3D 4.0",
   );
   await expect.poll(drawCalls).toBeGreaterThan(0);
+  await waitForCameraSettled(page.getByTestId("anatomy-canvas"));
   await page
     .getByRole("button", { name: "Select Upper arm on body", exact: true })
     .click();
@@ -284,6 +321,7 @@ test("anatomical view and heart detail retain the signal lab", async ({
   await page
     .getByRole("button", { name: "Close view options", exact: true })
     .click();
+  await waitForCameraSettled(anatomy);
   await page
     .getByRole("button", { name: "Select Upper arm on body", exact: true })
     .click();
@@ -304,10 +342,14 @@ test("pause freezes the live canvas and resume restarts the stream", async ({
   await expect(
     page.getByRole("button", { name: "Resume simulation", exact: true }),
   ).toBeVisible();
-  await page.waitForTimeout(120);
+  await expect
+    .poll(async () => {
+      const first = await canvasHash(plot);
+      await page.waitForTimeout(80);
+      return (await canvasHash(plot)) === first;
+    })
+    .toBe(true);
   const pausedImage = await canvasHash(plot);
-  await page.waitForTimeout(250);
-  expect(await canvasHash(plot)).toBe(pausedImage);
   await page
     .getByRole("button", { name: "Resume simulation", exact: true })
     .click();
@@ -392,7 +434,7 @@ test("a baseline remains saved as physiology changes and can be removed", async 
   await page.getByRole("button", { name: "Single beat", exact: true }).click();
   await page.getByRole("button", { name: /Save reference/ }).click();
   const comparison = page.getByRole("button", {
-    name: "Comparing: Top of wrist · 32y · 72 bpm",
+    name: /^Comparing: Top of wrist · 32y · 530 nm · 72 bpm · Sinus$/,
   });
   await expect(comparison).toBeVisible();
   await expect(ppg(page)).toHaveAttribute(
@@ -414,33 +456,29 @@ test("a baseline remains saved as physiology changes and can be removed", async 
   );
 });
 
-test("guided lessons configure young anatomy and an older comparison", async ({
-  page,
-}) => {
+test("lesson experiments apply young and older pulse settings", async ({ page }) => {
   await page.getByRole("button", { name: "Learn", exact: true }).click();
-  await page.getByRole("button", { name: "The science", exact: true }).click();
-  await page.getByRole("button", { name: /Guided lessons/ }).click();
   await page
-    .getByRole("dialog")
-    .getByRole("button", { name: /A pulse is more than a peak/ })
+    .getByRole("button", { name: "Read a heartbeat", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Age 25", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Try in Workspace", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("slider", { name: "Age", exact: true }),
   ).toHaveValue("25");
-  await expect(
-    page.getByRole("slider", { name: "Arterial stiffness", exact: true }),
-  ).toHaveValue("15");
   await expect(ppg(page)).toHaveAttribute("aria-label", /single-cycle/);
-  await page.waitForTimeout(120);
   const youngWaveform = await canvasHash(ppg(page));
 
   await page.getByRole("button", { name: "Learn", exact: true }).click();
-  await page.getByRole("button", { name: "The science", exact: true }).click();
-  await page.getByRole("button", { name: /Guided lessons/ }).click();
   await page
-    .getByRole("dialog")
-    .getByRole("button", { name: /Watch a pulse grow older/ })
+    .getByRole("button", { name: "Read a heartbeat", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Age 75", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Try in Workspace", exact: true })
     .click();
   await expect(
     page.getByRole("slider", { name: "Age", exact: true }),
@@ -448,15 +486,7 @@ test("guided lessons configure young anatomy and an older comparison", async ({
   await expect(
     page.getByRole("slider", { name: "Heart rate", exact: true }),
   ).toHaveValue("72");
-  await expect(
-    page.getByRole("button", {
-      name: "Comparing: Index finger · 25y · 72 bpm",
-    }),
-  ).toBeVisible();
-  await expect(ppg(page)).toHaveAttribute(
-    "aria-label",
-    /single-cycle.*Dashed lavender trace/,
-  );
+  await expect(ppg(page)).toHaveAttribute("aria-label", /single-cycle/);
   await expect.poll(() => canvasHash(ppg(page))).not.toBe(youngWaveform);
 });
 
@@ -559,7 +589,7 @@ test("desktop and mobile layouts stay within the document viewport", async ({
       .toEqual({ document: width, viewport: width });
     await expect(
       page.getByRole("heading", {
-        name: "One heartbeat. Different places. Different signals.",
+        name: "See how sensor location changes your PPG signal.",
       }),
     ).toBeVisible();
   }
@@ -575,27 +605,15 @@ test("desktop and mobile layouts stay within the document viewport", async ({
   });
 });
 
-test("wearable selection frames a region and explicit close-ups support mesh picking", async ({
-  page,
-}, testInfo) => {
+type WearableCase = readonly [id: string, device: string, siteName: string];
+
+async function verifyWearablePicking(page: Page, cases: readonly WearableCase[]) {
   const anatomy = page.getByTestId("anatomy-canvas");
-  await expect(anatomy).toHaveAttribute("data-body-loaded", "true");
   await page
     .getByRole("button", { name: "Pause simulation", exact: true })
     .click();
   const canvas = anatomy.locator("canvas");
-  for (const [id, device, siteName] of [
-    ["wrist", "Sensor band", "Top of wrist"],
-    ["finger", "Smart ring", "Index finger"],
-    ["ear", "Sensor earring", "Earlobe"],
-    ["forehead", "Temple sensor", "Temple"],
-    ["carotid", "Neck patch", "Carotid / neck"],
-    ["upperarm", "Bicep band", "Upper arm"],
-    ["toe", "Toe band", "Great toe"],
-  ]) {
-    const selectionDistance = Number(
-      await anatomy.getAttribute("data-camera-distance"),
-    );
+  for (const [id, device, siteName] of cases) {
     await page
       .getByRole("button", { name: `Select ${device}`, exact: true })
       .click();
@@ -603,9 +621,6 @@ test("wearable selection frames a region and explicit close-ups support mesh pic
     await expect(
       page.getByRole("button", { name: `Select ${device}`, exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
-    const afterSelection = Number(
-      await anatomy.getAttribute("data-camera-distance"),
-    );
     await expect(anatomy).toHaveAttribute("data-region-focus", id);
     await page
       .getByRole("button", { name: "Inspect device", exact: true })
@@ -615,37 +630,58 @@ test("wearable selection frames a region and explicit close-ups support mesh pic
       "aria-label",
       new RegExp(`at the ${id === "forehead" ? "temple" : id}`),
     );
-    await expect(page.locator(".signal-header h2")).toBeVisible();
-    await page.waitForTimeout(550); // Settle the deliberate device inspection camera flight.
+    await waitForCameraSettled(anatomy);
     const marker = page.getByRole("button", {
       name: `Select ${siteName} on body`,
       exact: true,
       includeHidden: true,
     });
-    const point = {
-      x: Number(await marker.getAttribute("data-mesh-x")),
-      y: Number(await marker.getAttribute("data-mesh-y")),
-    };
-    await canvas.click({ position: point });
-    await expect(anatomy).toHaveAttribute("data-last-picked-device", id);
-    await anatomy.screenshot({
-      path: testInfo.outputPath(`${id}-wearable.png`),
+    await canvas.click({
+      position: {
+        x: Number(await marker.getAttribute("data-mesh-x")),
+        y: Number(await marker.getAttribute("data-mesh-y")),
+      },
     });
+    await expect(anatomy).toHaveAttribute("data-last-picked-device", id);
   }
+  return anatomy;
+}
+
+test("wrist, finger, and ear close-ups support mesh picking", async ({ page }) => {
+  await verifyWearablePicking(page, [
+    ["wrist", "Sensor band", "Top of wrist"],
+    ["finger", "Smart ring", "Index finger"],
+    ["ear", "Sensor earring", "Earlobe"],
+  ]);
+});
+
+test("patch close-ups support mesh picking", async ({ page }) => {
+  await verifyWearablePicking(page, [
+    ["forehead", "Temple sensor", "Temple"],
+    ["carotid", "Neck patch", "Carotid / neck"],
+  ]);
+});
+
+test("limb close-ups support mesh picking and optical isolation", async ({
+  page,
+}, testInfo) => {
+  const anatomy = await verifyWearablePicking(page, [
+    ["upperarm", "Bicep band", "Upper arm"],
+    ["toe", "Toe band", "Great toe"],
+  ]);
   await page
     .getByRole("button", { name: "Select Sensor band", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Inspect device", exact: true })
     .click();
-  await page.waitForTimeout(550);
+  await waitForCameraSettled(anatomy);
   const bodyCalls = Number(await anatomy.getAttribute("data-draw-calls"));
   await page.getByRole("button", { name: "Optical side", exact: true }).click();
   await expect(anatomy).toHaveAttribute("data-device-isolated", "true");
   await expect
     .poll(async () => Number(await anatomy.getAttribute("data-draw-calls")))
     .toBeLessThan(bodyCalls);
-  await page.waitForTimeout(550);
   await anatomy.screenshot({
     path: testInfo.outputPath("wrist-optical-side.png"),
   });

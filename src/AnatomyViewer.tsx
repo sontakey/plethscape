@@ -621,7 +621,7 @@ export default function AnatomyViewer(props: Props) {
     const pickPoints: Record<WearableSite, THREE.Vector3> = {
       finger: new THREE.Vector3(0, 0, 0.0288),
       wrist: new THREE.Vector3(0, 0, 0.084),
-      ear: new THREE.Vector3(0, -0.029, 0.001),
+      ear: new THREE.Vector3(0, -0.033, 0.001),
       forehead: new THREE.Vector3(0, 0, 0.012),
       carotid: new THREE.Vector3(0, 0, 0.006),
       upperarm: new THREE.Vector3(0, 0, 0.151),
@@ -664,6 +664,7 @@ export default function AnatomyViewer(props: Props) {
         disposed ||
         current.current.active === false ||
         document.hidden ||
+        !loaded ||
         (!sceneVisible && !sceneDirty)
       ) {
         last = now;
