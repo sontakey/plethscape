@@ -111,7 +111,9 @@ export function fitWearablesToSkin(
         const x = p.getX(i),
           y = p.getY(i),
           z = p.getZ(i),
-          key = `${x.toFixed(5)},${y.toFixed(5)}`;
+          // Millimeter cells preserve the wearable's surface contour while
+          // avoiding redundant full-mesh raycasts for densely tessellated faces.
+          key = `${x.toFixed(3)},${y.toFixed(3)}`;
         let depth = cache.get(key);
         if (depth === undefined) {
           const base = anchor

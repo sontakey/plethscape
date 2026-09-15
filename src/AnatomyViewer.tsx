@@ -879,8 +879,12 @@ export default function AnatomyViewer(props: Props) {
         projected.copy(anatomy.sites[site.id]);
         anatomy.group.localToWorld(projected);
         projected.project(camera);
-        marker.style.left = `${(projected.x * 0.5 + 0.5) * element.clientWidth}px`;
-        marker.style.top = `${(-projected.y * 0.5 + 0.5) * element.clientHeight}px`;
+        marker.style.left = `${Math.round(
+          (projected.x * 0.5 + 0.5) * element.clientWidth,
+        )}px`;
+        marker.style.top = `${Math.round(
+          (-projected.y * 0.5 + 0.5) * element.clientHeight,
+        )}px`;
         marker.dataset.align = projected.x > 0.2 ? "left" : "right";
         marker.style.visibility =
           Boolean(deviceFocusRef.current) ||
