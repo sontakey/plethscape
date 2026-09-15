@@ -687,7 +687,6 @@ export default function AnatomyViewer(props: Props) {
       // A bounded cadence keeps controls, camera motion, and simulation
       // rendering live while leaving enough main-thread time for interaction.
       if (softwareRenderer && now - lastSoftwareFrame < 250) return;
-      lastSoftwareFrame = now;
       if (pendingResize) {
         const bounds = element.getBoundingClientRect();
         const width = Math.round(bounds.width);
@@ -919,6 +918,7 @@ export default function AnatomyViewer(props: Props) {
       }
       renderer.info.reset();
       renderer.render(scene, camera);
+      if (softwareRenderer) lastSoftwareFrame = performance.now();
       sceneDirty = false;
       lastRenderedTime = p.clock.current.time;
       lastRenderedRevision = renderRevision.current;
