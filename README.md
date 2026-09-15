@@ -82,6 +82,7 @@ You only need the model pipeline (`npm run model:build`, requires Python 3 and B
 
 - **Unit tests** (`npm test`): signal-model invariants, morphology, gait and rhythm math. Fast, no browser.
 - **E2E tests** (`npm run test:e2e`): Playwright, real Chromium, covers discovery flow, anatomy interaction, responsive layout, guided tour, and site comparison. CI runs headless with software rendering (`--use-gl=angle --use-angle=swiftshader`) since GitHub Actions runners have no GPU.
+- Run `npm run test:e2e` locally with a real GPU; E2E results are advisory in CI.
 - CI (`.github/workflows/ci.yml`) runs both suites plus the production build on every push and PR.
 
 ## Contributing
