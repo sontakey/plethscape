@@ -130,6 +130,7 @@ export default function AnatomyViewer(props: Props) {
     if (!host.current) return;
     const element = host.current;
     let renderer: THREE.WebGLRenderer;
+    let softwareRenderer = false;
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -137,6 +138,14 @@ export default function AnatomyViewer(props: Props) {
         alpha: true,
         powerPreference: "high-performance",
       });
+      const gl = renderer.getContext();
+      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      const rendererName = debugInfo
+        ? String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL))
+        : "";
+      softwareRenderer = /swiftshader|llvmpipe|software rasterizer/i.test(
+        rendererName,
+      );
     } catch {
       setError(true);
       // The signal workspace (PPG waveform, controls) does not depend on the
@@ -631,6 +640,7 @@ export default function AnatomyViewer(props: Props) {
     let lastRenderedRevision = -1;
     let lastRenderedTime = NaN;
     let lastRenderedHover: string | null = null;
+    let lastSoftwareFrame = -Infinity;
     let previousPresentation: Presentation = "atlas";
     let disposed = false;
     let loaded = false;
@@ -670,6 +680,11 @@ export default function AnatomyViewer(props: Props) {
         last = now;
         return;
       }
+      // Software WebGL can monopolize a small CI or fallback CPU at 60 fps.
+      // A bounded cadence keeps controls, camera motion, and simulation
+      // rendering live while leaving enough main-thread time for interaction.
+      if (softwareRenderer && now - lastSoftwareFrame < 250) return;
+      lastSoftwareFrame = now;
       if (pendingResize) {
         const bounds = element.getBoundingClientRect();
         const width = Math.round(bounds.width);
@@ -685,7 +700,10 @@ export default function AnatomyViewer(props: Props) {
           sceneDirty = true;
         }
       }
-      const delta = Math.min((now - last) / 1000, 0.05);
+      const delta = Math.min(
+        (now - last) / 1000,
+        softwareRenderer ? 0.25 : 0.05,
+      );
       last = now;
       controls.autoRotate =
         rotateRef.current && p.clock.current.running && !gestures.active;

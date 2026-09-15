@@ -514,14 +514,13 @@ export default function App() {
     requestAnimationFrame(() => {
       const card = document.querySelector<HTMLElement>(".guided-tour");
       card?.focus({ preventScroll: true });
-      document
-        .querySelector(".signal-section")
-        ?.scrollIntoView({ block: "start", behavior: "smooth" });
+      card?.scrollIntoView({ block: "nearest", behavior: "auto" });
     });
   const startTour = (step: number) => {
     if (captured) closeStudio();
     setDialog(null);
     setMobileControlsOpen(false);
+    setMobileSignalExpanded(true);
     setToolsOpen(false);
     setTourStep(step);
     setTourApplied(false);
@@ -541,7 +540,7 @@ export default function App() {
         "A reference is ready. Change one setting and compare the result.",
       );
     }
-    revealTour();
+    if (step === 0) revealTour();
   };
   const applyTour = () => {
     if (tourStep === null || tourStep >= TOUR_STEPS.length) return;
@@ -557,9 +556,6 @@ export default function App() {
     setRunning(true);
     setTourApplied(true);
     setMobileControlsOpen(false);
-    document
-      .querySelector(".signal-section")
-      ?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
   const tourSetup =
     tourStep !== null && tourStep < TOUR_STEPS.length
