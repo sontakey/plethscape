@@ -155,7 +155,9 @@ export default function AnatomyViewer(props: Props) {
       current.current.onReady?.();
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.65));
+    renderer.setPixelRatio(
+      softwareRenderer ? 0.25 : Math.min(window.devicePixelRatio, 1.65),
+    );
     // The static CSS floor sits behind the canvas, outside the depth buffer.
     renderer.setClearColor(0x010202, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
