@@ -6,9 +6,9 @@ An interactive 3D physiology lab for exploring where and how photoplethysmograph
 
 ## Demo
 
-[![Plethscape demo video](docs/media/plethscape-demo-poster.jpg)](docs/media/plethscape-demo.mp4 "Click to play the demo video (MP4)")
+![Plethscape demo](docs/media/plethscape-demo.gif)
 
-_Click the image to play the demo video. See [docs/media/plethscape-demo.mp4](docs/media/plethscape-demo.mp4)._
+Full 45s video: [plethscape-demo.mp4](docs/media/plethscape-demo.mp4) · [LinkedIn post](https://www.linkedin.com/posts/sontakey_gpt-6-astra-is-absolutely-insane-i-just-activity-7504175548571635714-iVaQ)
 
 ![Plethscape screenshot](public/social-preview.png)
 
@@ -80,10 +80,9 @@ You only need the model pipeline (`npm run model:build`, requires Python 3 and B
 
 ## Testing
 
-- **Unit tests** (`npm test`): signal-model invariants, morphology, gait and rhythm math. Fast, no browser.
-- **E2E tests** (`npm run test:e2e`): Playwright, real Chromium, covers discovery flow, anatomy interaction, responsive layout, guided tour, and site comparison. CI runs headless with software rendering (`--use-gl=angle --use-angle=swiftshader`) since GitHub Actions runners have no GPU.
-- Run `npm run test:e2e` locally with a real GPU; E2E results are advisory in CI.
-- CI (`.github/workflows/ci.yml`) runs both suites plus the production build on every push and PR.
+- **Unit tests** (`npm test`): signal-model invariants, morphology, gait and rhythm math. Unit tests run in CI.
+- **E2E tests** (`npm run test:e2e`): Playwright browser tests. E2E is local-only (`npm run test:e2e`).
+- CI (`.github/workflows/ci.yml`) runs the unit tests plus the production build on every push and PR.
 
 ## Contributing
 
