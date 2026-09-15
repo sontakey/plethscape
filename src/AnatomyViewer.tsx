@@ -145,7 +145,8 @@ export default function AnatomyViewer(props: Props) {
         : "";
       softwareRenderer =
         /swiftshader|llvmpipe|software rasterizer/i.test(rendererName) ||
-        navigator.hardwareConcurrency <= 2;
+        navigator.hardwareConcurrency <= 2 ||
+        navigator.webdriver;
     } catch {
       setError(true);
       // The signal workspace (PPG waveform, controls) does not depend on the
