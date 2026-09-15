@@ -22,7 +22,12 @@ SOFTWARE.
 
 ---
 
-Note: the 3D anatomy models under public/models/ are derived from BodyParts3D
-(The Database Center for Life Science) and are licensed separately under
-CC BY 4.0, not MIT. See public/ATTRIBUTION.md for full attribution and license
-terms for the model assets.
+Note: the anatomy models under public/models/ are derived from BodyParts3D
+(The Database Center for Life Science) and the Human Reference Atlas, and are
+licensed separately under CC BY 4.0, not MIT. The Renderpeople-derived
+presentation heads under public/models/ carry separate restricted terms and are
+not covered by MIT or CC BY 4.0. The bundled Google Draco decoder is licensed
+under Apache 2.0, with its complete license at public/models/draco/LICENSE.
+Sensor Bio names, logos, and brand assets are excluded from the MIT license and
+no trademark rights are granted. See public/ATTRIBUTION.md for source-specific
+attribution, adaptations, and terms.

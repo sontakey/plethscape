@@ -4,7 +4,27 @@ An interactive 3D physiology lab for exploring where and how photoplethysmograph
 
 **Live demo:** [chatppg.com/plethscape](https://chatppg.com/plethscape)
 
+## Demo
+
+[![Plethscape demo video](docs/media/plethscape-demo-poster.jpg)](docs/media/plethscape-demo.mp4 "Click to play the demo video (MP4)")
+
+_Click the image to play the demo video. See [docs/media/plethscape-demo.mp4](docs/media/plethscape-demo.mp4)._
+
 ![Plethscape screenshot](public/social-preview.png)
+
+## Why I built this
+
+Sameer Sontakey, the author, on the motivation for Plethscape (from his [LinkedIn post](https://www.linkedin.com/posts/sontakey_gpt-6-astra-is-absolutely-insane-i-just-activity-7504175548571635714-iVaQ)):
+
+> I've spent 10+ years working with raw PPG, the light-based signal wearables use to measure heart rate and more. Most people never see the underlying waveform or understand how it changes with sensor placement and physiology.
+>
+> Which is better? Ring? Wrist? Temple? The answer is always: it depends.
+>
+> So I built Plethscape, an interactive 3D physiology lab. Pick a sensing site on the body, change the simulated subject's age and heart rate, and watch the simulated waveform respond across different wavelengths.
+>
+> I wanted people to be able to explore these signals themselves.
+
+Read the full post, including the sourcing behind the physiology model (Pulse Wave Database, Prof. Peter Charlton's multi-site PPG work, BodyParts3D anatomy), on [LinkedIn](https://www.linkedin.com/posts/sontakey_gpt-6-astra-is-absolutely-insane-i-just-activity-7504175548571635714-iVaQ).
 
 ## What it is / is not
 
@@ -28,16 +48,16 @@ Open the local URL Vite prints (normally http://localhost:5173).
 
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the Vite dev server |
-| `npm run build` | Type-check (`tsc -b`) and produce a production build in `dist/` |
-| `npm run preview` | Serve the production build locally |
-| `npm test` | Run signal-model and morphology unit tests |
-| `npm run test:e2e` | Run Playwright browser tests (starts/reuses the dev server) |
-| `npm run format` | Prettier over `src`, config and this README |
+| Command               | What it does                                                                    |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `npm run dev`         | Start the Vite dev server                                                       |
+| `npm run build`       | Type-check (`tsc -b`) and produce a production build in `dist/`                 |
+| `npm run preview`     | Serve the production build locally                                              |
+| `npm test`            | Run signal-model and morphology unit tests                                      |
+| `npm run test:e2e`    | Run Playwright browser tests (starts/reuses the dev server)                     |
+| `npm run format`      | Prettier over `src`, config and this README                                     |
 | `npm run model:build` | Rebuild the anatomy atlas from BodyParts3D source (Python 3 + Blender required) |
-| `npm run model:skin` | Rebuild only the neutral presentation skin |
+| `npm run model:skin`  | Rebuild only the neutral presentation skin                                      |
 
 ## Architecture
 
@@ -70,8 +90,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Attribution
 
-Anatomy models are derived from BodyParts3D and Human Reference Atlas data under CC BY 4.0, not MIT. Full attribution, adaptations and terms are in [public/ATTRIBUTION.md](public/ATTRIBUTION.md).
+Anatomy models are derived from BodyParts3D and Human Reference Atlas data under CC BY 4.0, not MIT. The Renderpeople-derived presentation heads have separate restricted terms and are not open-source assets. Full attribution, adaptations and terms are in [public/ATTRIBUTION.md](public/ATTRIBUTION.md).
 
 ## License
 
-MIT for the application code. See [LICENSE](LICENSE) — anatomy model assets carry a separate CC BY 4.0 attribution requirement (see above).
+MIT for the application code. See [LICENSE](LICENSE). BodyParts3D and Human Reference Atlas anatomy assets carry separate CC BY 4.0 attribution requirements. Renderpeople-derived presentation heads carry separate restricted terms and are not covered by MIT or CC BY 4.0. The bundled Google Draco decoder is Apache 2.0. Sensor Bio marks and brand assets are excluded from the MIT license. See [public/ATTRIBUTION.md](public/ATTRIBUTION.md).

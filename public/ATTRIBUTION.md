@@ -45,8 +45,21 @@ SOFTWARE.
 
 `models/neutral-skin.glb` is adapted from BodyParts3D FJ2810 under the same CC BY 4.0 license. Custom processing changes the hand pose, reconstructs the forearm surface, removes external reproductive contours, and remeshes the skin for interactive display. See `scripts/build_neutral_skin.py`.
 
-## Scanned presentation head
+## Scanned presentation heads
 
-`models/scanned-head.glb` is adapted from **Eric Rigged 001**, © Renderpeople. Source: https://renderpeople.com/free-3d-people/ (FBX package), referenced at https://free3d.com/3d-model/eric-rigged-001-771956.html.
+The two presentation-head assets are adapted from Renderpeople free rigged models. They are not covered by the application's MIT license or the anatomy assets' CC BY 4.0 license.
 
-The head is a separate photographic scan, not the individual represented by the internal anatomy. Adaptations: head extraction, neck fitting, subdivision, texture cropping/resizing and browser compression. Renderpeople does not endorse Plethscape. This asset is not covered by the application's code license or the anatomy's CC BY license; reuse requires appropriate permission from Renderpeople.
+- `public/models/scanned-head.glb` is adapted from **Eric Rigged 001**, © Renderpeople. Official source collection: https://renderpeople.com/free-3d-people/. Model reference: https://free3d.com/3d-model/eric-rigged-001-771956.html.
+- `public/models/scanned-head-female.glb` is adapted from **Claudia Rigged 002**, © Renderpeople. Official source collection: https://renderpeople.com/free-3d-people/. Model reference: https://free3d.com/3d-model/claudia-rigged-002-167206.html.
+- Adaptations: head extraction, neck fitting, subdivision, texture cropping and resizing, material changes, browser compression, and, for Claudia, clothing removal and ponytail isolation.
+- Renderpeople terms: https://renderpeople.com/general-terms-and-conditions/. The standard terms permit rendering uses but restrict transfer, learning-environment implementation, and direct or easy third-party access to the 3D data. Public source-repository distribution therefore requires separate express written consent from Renderpeople. Do not reuse or redistribute these GLB files based on this repository's MIT or CC BY notices.
+
+The heads are separate photographic scans, not the individuals represented by the internal anatomy. Renderpeople does not endorse Plethscape.
+
+## Draco decoder
+
+`public/models/draco/draco_decoder.js`, `draco_decoder.wasm`, and `draco_wasm_wrapper.js` are byte-for-byte copies of the glTF decoder files distributed with three.js 0.186.0. They are Google Draco software under the Apache License 2.0, not Plethscape MIT code. Source: https://github.com/google/draco. The complete license text is distributed at [`public/models/draco/LICENSE`](models/draco/LICENSE).
+
+## Sensor Bio marks
+
+`src/assets/sensorbio-wordmark.svg`, the Sensor Bio name and logo, and their appearance in screenshots are Sensor Bio trademarks and brand assets. They are not licensed under the Plethscape MIT license. No trademark rights are granted by this repository.
