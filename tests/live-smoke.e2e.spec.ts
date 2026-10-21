@@ -137,6 +137,10 @@ test("release desktop workspace changes sites, physiology, wavelengths, rhythms 
       id,
     );
   }
+  // Selecting a rhythm has always returned the workspace to a running stream.
+  await expect(
+    page.getByRole("button", { name: "Pause simulation", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(
     page.getByRole("slider", { name: "Heart rate", exact: true }),
@@ -145,7 +149,16 @@ test("release desktop workspace changes sites, physiology, wavelengths, rhythms 
     page.getByRole("img", { name: /^Simulated three-axis accelerometer/ }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Rest", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Pause simulation", exact: true })
+    .click();
   await page.getByRole("button", { name: "Reset camera", exact: true }).click();
+  // Camera telemetry is published on the next rendered frame.
+  await expect
+    .poll(async () =>
+      Number(await anatomy.getAttribute("data-camera-distance")),
+    )
+    .toBeGreaterThan(6);
   const distance = Number(await anatomy.getAttribute("data-camera-distance"));
   await page.getByRole("button", { name: "Zoom out", exact: true }).click();
   await expect
@@ -283,7 +296,7 @@ test("release phone retains location, physiology drawer, lesson experiments and 
     exact: true,
   });
   await expect(
-    sources.getByRole("link", { name: /BodyParts3D/ }),
+    sources.getByRole("link", { name: /^BodyParts3D/ }),
   ).toBeVisible();
   await sources
     .getByRole("button", { name: "Close dialog", exact: true })
