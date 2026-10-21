@@ -103,13 +103,27 @@ export default function AnatomyViewer(props: Props) {
   const deviceFocusRef = useRef<WearableSite | null>(null);
   const [isolatedDevice, setIsolatedDevice] = useState(false);
   const isolatedDeviceRef = useRef(false);
+  const initialCameraApplied = useRef(false);
 
   useEffect(() => {
     if (props.inspectRequest && isWearableSite(props.inspectRequest.site))
       actions.current?.device(props.inspectRequest.site);
   }, [props.inspectRequest]);
   useEffect(() => {
-    if (!ready || props.pulseStart != null) return;
+    if (!ready) return;
+    const initialView = !initialCameraApplied.current;
+    initialCameraApplied.current = true;
+    if (props.pulseStart != null) return;
+    // Start compact workspaces in context; later site choices keep their focus.
+    if (
+      initialView &&
+      window.matchMedia(
+        "(max-width: 700px), (max-width: 1023px) and (max-height: 520px)",
+      ).matches
+    ) {
+      actions.current?.reset();
+      return;
+    }
     if (isWearableSite(props.site)) actions.current?.select(props.site, false);
     else actions.current?.reset();
   }, [props.site, ready, props.siteSelection]);

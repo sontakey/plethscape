@@ -877,6 +877,18 @@ export default function App() {
             >
               Workspace
             </button>
+            {!captured && (
+              <button
+                aria-pressed={sceneOnly}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setSceneOnly((value) => !value);
+                }}
+              >
+                <ArrowsOut size={20} />
+                {sceneOnly ? "Show controls" : "Immerse"}
+              </button>
+            )}
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -957,6 +969,7 @@ export default function App() {
             </button>
           </div>
         </div>
+        <div className="workspace-viewport">
         <div className="mobile-adjust-bar">
           <label className="mobile-site-picker">
             <span className="mobile-site-label">Wearable location</span>
@@ -1152,7 +1165,12 @@ export default function App() {
               onCancel={() => setDemoCamera(null)}
               onFinish={() => {
                 chooseSite("wrist");
-                setDemoCamera({ view: "wrist", nonce: Date.now() });
+                setDemoCamera({
+                  view: window.matchMedia(
+                    "(max-width: 700px), (max-width: 1023px) and (max-height: 520px)",
+                  ).matches ? "full" : "wrist",
+                  nonce: Date.now(),
+                });
                 setWavelength("green");
                 setPhysiology({
                   ...DEFAULT_PHYSIOLOGY,
@@ -1659,6 +1677,7 @@ export default function App() {
               </>
             )}
           </aside>
+        </div>
         </div>
 
         {motionExpanded && !captured && anatomyReady && (
