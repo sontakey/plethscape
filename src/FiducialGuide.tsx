@@ -34,7 +34,7 @@ export default function FiducialGuide({
         <span>Fiducial points</span>
       </div>
       <p className="fiducial-intro">
-        Choose a landmark to find it on the amber trace.
+        Choose a landmark to find it on the pulse trace.
       </p>
       <div className="fiducial-options">
         {(Object.keys(FIDUCIALS) as FiducialId[]).map((id) => (

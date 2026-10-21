@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { sampleBeat, type Physiology, type SiteId } from "./simulation";
 import { OPTICAL_BANDS, type Wavelength } from "./optics";
+import { getChartPalette, useTheme } from "./theme";
 
 const bands: Wavelength[] = ["green", "red", "infrared"];
 export default function WavelengthComparison({
@@ -10,6 +11,8 @@ export default function WavelengthComparison({
   physiology: Physiology;
   site: SiteId;
 }) {
+  const { theme } = useTheme();
+  const colors = getChartPalette(theme);
   const [normalized, setNormalized] = useState(false);
   const curves = useMemo(
     () =>
@@ -54,16 +57,12 @@ export default function WavelengthComparison({
       <svg
         viewBox="0 0 390 205"
         role="img"
-        aria-label={`Three simulated ${site} pulse contours on ${normalized ? "a normalized zero to one" : "a shared zero to 1.8 arbitrary-unit"} scale. Green, red and infrared are overlaid.`}
+        aria-label={`Three simulated ${site} pulse contours on ${normalized ? "a normalized zero to one" : "a shared zero to 1.8 arbitrary-unit"} scale. Green is solid, red is dashed, and invisible infrared is dotted in violet false color.`}
       >
         {[0, 0.5, 1].map((v) => (
           <g key={v}>
-            <path
-              d={`M32 ${174 - v * 142}H368`}
-              stroke="#bca184"
-              strokeOpacity=".15"
-            />
-            <text x="5" y={178 - v * 142} fill="#bcad9b" fontSize="10">
+            <path d={`M32 ${174 - v * 142}H368`} stroke={colors.grid} />
+            <text x="5" y={178 - v * 142} fill={colors.text} fontSize="10">
               {normalized ? v : (v * 1.8).toFixed(1)}
             </text>
           </g>
@@ -73,15 +72,15 @@ export default function WavelengthComparison({
             key={wavelength}
             d={path}
             fill="none"
-            stroke={`#${OPTICAL_BANDS[wavelength].color.toString(16)}`}
+            stroke={colors.channels[wavelength]}
             strokeWidth="2"
             strokeDasharray={i === 1 ? "6 3" : i === 2 ? "2 3" : undefined}
           />
         ))}
-        <text x="32" y="196" fill="#bcad9b" fontSize="10">
+        <text x="32" y="196" fill={colors.text} fontSize="10">
           Pulse onset
         </text>
-        <text x="368" y="196" textAnchor="end" fill="#bcad9b" fontSize="10">
+        <text x="368" y="196" textAnchor="end" fill={colors.text} fontSize="10">
           One cardiac cycle
         </text>
       </svg>
@@ -95,14 +94,14 @@ export default function WavelengthComparison({
       <div className="wavelength-depth-key">
         {bands.map((w) => (
           <div key={w}>
-            <span style={{ color: `#${OPTICAL_BANDS[w].color.toString(16)}` }}>
+            <span style={{ color: colors.channels[w] }}>
               {OPTICAL_BANDS[w].name} · {OPTICAL_BANDS[w].nm}
             </span>
             <span className="depth-track">
               <i
                 style={{
                   width: `${(OPTICAL_BANDS[w].depth / 1.65) * 100}%`,
-                  background: `#${OPTICAL_BANDS[w].color.toString(16)}`,
+                  background: colors.channels[w],
                 }}
               />
             </span>

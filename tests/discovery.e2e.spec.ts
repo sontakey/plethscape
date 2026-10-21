@@ -49,7 +49,7 @@ test("workspace starts at the wrist with controls and both signal views", async 
   );
   await expect(
     page.getByRole("img", { name: /^Synthetic streaming PPG/ }),
-  ).toHaveAttribute("aria-label", /Dashed lavender/);
+  ).toHaveAttribute("aria-label", /Dashed purple/);
   // The signal remains in the viewport while lower controls scroll in their own rail.
   await page
     .getByRole("slider", { name: "Breathing rate", exact: true })
@@ -89,7 +89,9 @@ test("guided age experiment changes the actual workspace and preserves its refer
   page,
 }) => {
   await page.getByRole("button", { name: "Learn", exact: true }).click();
-  await page.getByRole("button", { name: "Read a heartbeat", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Read a heartbeat", exact: true })
+    .click();
   await page.getByRole("button", { name: "Age 75", exact: true }).click();
   await page
     .getByRole("button", { name: "Try in Workspace", exact: true })
@@ -102,7 +104,9 @@ test("guided age experiment changes the actual workspace and preserves its refer
   await expect(
     page.getByRole("button", { name: "Back to lesson", exact: false }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Back to lesson", exact: false }).click();
+  await page
+    .getByRole("button", { name: "Back to lesson", exact: false })
+    .click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "The science", exact: true }).click();
   await expect(
@@ -169,7 +173,9 @@ for (const width of [360, 820])
       )
       .toBe(true);
     if (width < 701) {
-      await page.getByRole("button", { name: "Open menu", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Open menu", exact: true })
+        .click();
       await page
         .getByRole("button", { name: "Learn through exploration" })
         .click();
@@ -177,6 +183,42 @@ for (const width of [360, 820])
       await page.getByRole("button", { name: "Learn", exact: true }).click();
     }
     await expect(page.getByRole("dialog")).toBeVisible();
+    const header = page.locator("dialog.learning-page .learning-navigation");
+    await expect(
+      header.getByRole("combobox", { name: "Appearance", exact: true }),
+    ).toBeVisible();
+    for (const name of ["Back to ChatPPG", "Plethscape home"])
+      await expect(
+        header.getByRole("link", { name, exact: true }),
+      ).toBeVisible();
+    const headerGeometry = await header.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        top: bounds.top,
+        bottom: bounds.bottom,
+        left: bounds.left,
+        right: bounds.right,
+        controls: Array.from(element.querySelectorAll("a, select")).map(
+          (control) => {
+            const rect = control.getBoundingClientRect();
+            return {
+              top: rect.top,
+              bottom: rect.bottom,
+              left: rect.left,
+              right: rect.right,
+            };
+          },
+        ),
+      };
+    });
+    expect(headerGeometry.top).toBeGreaterThanOrEqual(0);
+    expect(headerGeometry.right).toBeLessThanOrEqual(width);
+    for (const control of headerGeometry.controls) {
+      expect(control.top).toBeGreaterThanOrEqual(headerGeometry.top);
+      expect(control.bottom).toBeLessThanOrEqual(headerGeometry.bottom);
+      expect(control.left).toBeGreaterThanOrEqual(headerGeometry.left);
+      expect(control.right).toBeLessThanOrEqual(headerGeometry.right);
+    }
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
       .toBe(width);

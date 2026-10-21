@@ -4,6 +4,12 @@ An interactive 3D physiology lab for exploring where and how photoplethysmograph
 
 **Live demo:** [chatppg.com/plethscape](https://chatppg.com/plethscape)
 
+The workspace uses ChatPPG's light appearance by default. Choose Light or Dark
+from Appearance in the desktop header, mobile menu, or Learn header. The choice
+is remembered on this browser; switching appearance preserves the simulation,
+camera, selected sensor and saved reference. Local implementation and release
+status are recorded separately in the theme validation notes.
+
 ## Demo
 
 ![Plethscape demo](docs/media/plethscape-demo.gif)

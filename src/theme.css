@@ -1,0 +1,43 @@
+/* ChatPPG light palette. Component rules retain their original dark values in
+   light-dark() so a theme change updates the existing interface in place. */
+:root {
+  --theme-paper: #fdfdfe;
+  --theme-surface: #ffffff;
+  --theme-panel: #f6f8fc;
+  --theme-inset: #f5f7fb;
+  --theme-figure: #f3f6ff;
+  --theme-ink: #111318;
+  --theme-muted: #626b7b;
+  --theme-accent: #2855ff;
+  --theme-accent-strong: #1942dd;
+  --theme-on-accent: #ffffff;
+  --theme-selected: #eaf0ff;
+  --theme-hover: #edf2ff;
+  --theme-line: #dce1ea;
+  --theme-line-strong: #ccd6e7;
+  --theme-selection-line: #9db4ff;
+  --theme-floating: #fdfdfef5;
+  --theme-shadow: #20334d14;
+  --theme-halo: #2855ff14;
+  --theme-glow: #e4edfa88;
+  --theme-teal: #13758c;
+  --theme-violet: #6950ae;
+  /* Keep CSS channel and motion marks aligned with getChartPalette() in theme.ts. */
+  --wavelength-green: light-dark(#237b46, #8de8a3);
+  --wavelength-red: light-dark(#ba3d43, #ff8470);
+  --wavelength-infrared: light-dark(#6950ae, #b6a3ee);
+  --motion-x: light-dark(#a45b17, #efaa70);
+  --motion-y: light-dark(#13758c, #82d9dc);
+  --motion-z: light-dark(#6950ae, #b7a4d1);
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font: var(--font-body);
+  --scene-grid: url("./assets/scene-grid-light.svg");
+  --attribution-logo-filter: none;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --scene-grid: url("./assets/scene-grid.svg");
+  --attribution-logo-filter: grayscale(1) brightness(0) invert(0.82);
+  color-scheme: dark;
+}

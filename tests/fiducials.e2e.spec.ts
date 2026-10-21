@@ -5,6 +5,14 @@ for (const width of [1440, 390]) {
   }) => {
     await page.setViewportSize({ width, height: 1100 });
     await page.goto("/");
+    await expect(page.getByTestId("anatomy-canvas")).toHaveAttribute(
+      "data-body-loaded",
+      "true",
+    );
+    if (width < 701)
+      await page
+        .getByRole("button", { name: "Signal details ↑", exact: true })
+        .click();
     await page
       .getByRole("button", { name: "Single beat", exact: true })
       .click();

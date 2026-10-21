@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { WEARABLE_SITES, type WearableSite } from "./devices";
+import type { Theme } from "./theme";
 
 /** Seven soft billboards; no particle simulation or geometry updates. */
 export function createSensorAuras() {
@@ -43,8 +44,19 @@ export function createSensorAuras() {
       return [site, sprite];
     }),
   ) as Record<WearableSite, THREE.Sprite>;
+  let lightTheme = false;
   return {
     sprites,
+    setTheme(theme: Theme) {
+      lightTheme = theme === "light";
+      for (const sprite of Object.values(sprites)) {
+        sprite.material.color.set(lightTheme ? "#5277a6" : "#ffae69");
+        sprite.material.blending = lightTheme
+          ? THREE.NormalBlending
+          : THREE.AdditiveBlending;
+        sprite.material.needsUpdate = true;
+      }
+    },
     update(
       time: number,
       selected: string,
@@ -63,7 +75,7 @@ export function createSensorAuras() {
           ? 1
           : 0.9 + 0.1 * Math.sin(time * 1.8 + i * 0.83);
         sprites[site].material.opacity =
-          emphasis * shimmer * (focused ? 0.32 : 1);
+          emphasis * shimmer * (focused ? 0.32 : 1) * (lightTheme ? 0.8 : 1);
         sprites[site].scale.setScalar(
           sizes[site] *
             (selected === site ? 1.6 + beat * 0.18 : 1) *

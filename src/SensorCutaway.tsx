@@ -9,6 +9,7 @@ import {
   type CapturedBeat,
 } from "./simulation";
 import { OPTICAL_BANDS, type Wavelength } from "./optics";
+import { getChartPalette, getTheme, subscribeTheme } from "./theme";
 type Props = {
   clock: RefObject<{ time: number; running: boolean }>;
   physiology: Physiology;
@@ -43,7 +44,8 @@ export default function SensorCutaway(props: Props) {
     renderer.domElement.setAttribute("role", "img");
     element.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0e0c0a, 0.034);
+    const fog = new THREE.FogExp2(0x0e0c0a, 0.034);
+    scene.fog = fog;
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
     camera.position.set(5.3, 3.8, 8);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -61,7 +63,8 @@ export default function SensorCutaway(props: Props) {
       controls.update();
     };
     reset.current = fitView;
-    scene.add(new THREE.HemisphereLight(0xffe8d4, 0x3e231c, 2.3));
+    const hemisphere = new THREE.HemisphereLight(0xffe8d4, 0x3e231c, 2.3);
+    scene.add(hemisphere);
     const light = new THREE.DirectionalLight(0xffd0a6, 3.4);
     light.position.set(2, 5, 4);
     scene.add(light);
@@ -263,6 +266,7 @@ export default function SensorCutaway(props: Props) {
       uColor: { value: new THREE.Color(0x8de8a3) },
       uLight: { value: 1 },
       uStage: { value: 0 },
+      uLightTheme: { value: 0 },
     };
     const photonMat = new THREE.ShaderMaterial({
       uniforms: uniform,
@@ -270,7 +274,20 @@ export default function SensorCutaway(props: Props) {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       vertexShader: `varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-      fragmentShader: `varying vec2 vUv;uniform float uTime;uniform vec3 uColor;uniform float uLight;uniform float uStage;void main(){float flow=pow(.5+.5*cos(vUv.x*26.-uTime*5.),5.);float a=.16+.68*flow;float received=mix(1.,uLight,smoothstep(.35,1.,vUv.x));gl_FragColor=vec4(uColor*(1.2+flow),a*received);}`,
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform float uTime;
+        uniform vec3 uColor;
+        uniform float uLight;
+        uniform float uStage;
+        uniform float uLightTheme;
+        void main() {
+          float flow=pow(.5+.5*cos(vUv.x*26.-uTime*5.),5.);
+          float a=mix(.16+.68*flow,.36+.52*flow,uLightTheme);
+          float received=mix(1.,uLight,smoothstep(.35,1.,vUv.x));
+          float brightness=mix(1.2+flow,.86+.14*flow,uLightTheme);
+          gl_FragColor=vec4(uColor*brightness,a*received);
+        }`,
     });
     const photons = new THREE.Group();
     group.add(photons);
@@ -305,6 +322,45 @@ export default function SensorCutaway(props: Props) {
     const invalidate = () => {
       dirty = true;
     };
+    let lightTheme = getTheme() === "light";
+    const applyWavelengthAppearance = (wavelength: Wavelength) => {
+      const band = OPTICAL_BANDS[wavelength];
+      // Share contrast-safe display hues with the plots; optical depth and
+      // coefficients continue to come exclusively from optics.ts.
+      uniform.uColor.value.set(
+        lightTheme ? getChartPalette("light").channels[wavelength] : band.color,
+      );
+      emitterMat.color.set(band.color);
+      emitterMat.emissive.set(band.color);
+      glow.color.set(band.color);
+    };
+    const applyTheme = () => {
+      const theme = getTheme();
+      lightTheme = theme === "light";
+      const background = lightTheme ? 0xf5f7fb : 0x0e0c0a;
+      renderer.setClearColor(background, 1);
+      fog.color.set(background);
+      hemisphere.color.set(lightTheme ? 0xffffff : 0xffe8d4);
+      hemisphere.groundColor.set(lightTheme ? 0xbcc4ce : 0x3e231c);
+      hemisphere.intensity = lightTheme ? 1.6 : 2.3;
+      light.color.set(lightTheme ? 0xfffcf7 : 0xffd0a6);
+      light.intensity = lightTheme ? 2.5 : 3.4;
+      back.color.set(lightTheme ? 0xdde7f4 : 0xff9261);
+      back.intensity = lightTheme ? 1.25 : 2;
+      tissue.opacity = lightTheme ? 0.32 : 0.24;
+      collagen.color.set(lightTheme ? 0x8d6d60 : 0xc18e74);
+      collagen.opacity = lightTheme ? 0.24 : 0.16;
+      photonMat.blending = lightTheme
+        ? THREE.NormalBlending
+        : THREE.AdditiveBlending;
+      photonMat.needsUpdate = true;
+      uniform.uLightTheme.value = lightTheme ? 1 : 0;
+      applyWavelengthAppearance(current.current.wavelength);
+      element.dataset.theme = theme;
+      invalidate();
+    };
+    applyTheme();
+    const unsubscribeTheme = subscribeTheme(applyTheme);
     controls.addEventListener("change", invalidate);
     const resize = () => {
       dirty = true;
@@ -343,14 +399,10 @@ export default function SensorCutaway(props: Props) {
       dirty = false;
       lastTime = p.clock.current.time;
       lastProps = p;
-      const band = OPTICAL_BANDS[p.wavelength];
       if (previousBand !== p.wavelength) {
         rebuild(p.wavelength);
         previousBand = p.wavelength;
-        uniform.uColor.value.set(band.color);
-        emitterMat.color.set(band.color);
-        emitterMat.emissive.set(band.color);
-        glow.color.set(band.color);
+        applyWavelengthAppearance(p.wavelength);
       }
       const pulse = sampleCapturedBeat(
         p.clock.current.time,
@@ -363,9 +415,11 @@ export default function SensorCutaway(props: Props) {
       uniform.uLight.value = detected;
       uniform.uStage.value = p.stage;
       vessels.scale.y = 1 + Math.max(0, pulse) * 0.028;
-      emitterMat.emissiveIntensity = p.stage === 0 ? 3 : 1.4;
-      detectorMat.emissiveIntensity = (p.stage === 2 ? 1.6 : 0.5) * detected;
-      glow.intensity = p.stage === 1 ? 2.6 : 1.2;
+      emitterMat.emissiveIntensity =
+        (p.stage === 0 ? 3 : 1.4) * (lightTheme ? 0.45 : 1);
+      detectorMat.emissiveIntensity =
+        (p.stage === 2 ? 1.6 : 0.5) * detected * (lightTheme ? 0.55 : 1);
+      glow.intensity = (p.stage === 1 ? 2.6 : 1.2) * (lightTheme ? 0.35 : 1);
       element.dataset.time = String(p.clock.current.time);
       element.dataset.pulse = String(pulse);
       element.dataset.detectedLight = String(detected);
@@ -374,6 +428,7 @@ export default function SensorCutaway(props: Props) {
     };
     frame = requestAnimationFrame(draw);
     return () => {
+      unsubscribeTheme();
       cancelAnimationFrame(frame);
       observer.disconnect();
       intersection.disconnect();

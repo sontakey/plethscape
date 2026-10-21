@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type RefObject } from "react";
+import { getChartPalette, useTheme } from "./theme";
 import {
   captureBeat,
   sampleCapturedBeat,
@@ -13,6 +14,8 @@ export default function RecentBeats(p: {
   physiology: Physiology;
   site: SiteId;
 }) {
+  const { theme } = useTheme();
+  const colors = getChartPalette(theme);
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState(p.clock.current.time);
   useEffect(() => {
@@ -57,7 +60,7 @@ export default function RecentBeats(p: {
       {open && (
         <>
           <p>
-            Last five completed pulses, aligned at onset. Bright amber is the
+            Last five completed pulses, aligned at onset. The bold trace is the
             newest. Heights keep their original scale; width shows the pulse
             interval.
           </p>
@@ -67,6 +70,7 @@ export default function RecentBeats(p: {
             aria-label="Five recent simulated pulses with original amplitudes and durations"
             data-testid="recent-beats"
             data-event={start}
+            fill={colors.text}
           >
             {[0, 0.5, 1, 1.5].map((v) => (
               <g key={v}>
@@ -75,7 +79,7 @@ export default function RecentBeats(p: {
                   x2="316"
                   y1={125 - (v / 1.7) * 112}
                   y2={125 - (v / 1.7) * 112}
-                  stroke="#352a21"
+                  stroke={colors.grid}
                 />
                 <text x="0" y={129 - (v / 1.7) * 112}>
                   {v.toFixed(1)}
@@ -92,8 +96,14 @@ export default function RecentBeats(p: {
                   )
                   .join(" ")}
                 fill="none"
-                stroke={i === 4 ? "#ffbf85" : "#b0a5bd"}
-                opacity={i === 4 ? 1 : 0.28 + i * 0.12}
+                stroke={i === 4 ? colors.trace : colors.comparison}
+                opacity={
+                  i === 4
+                    ? 1
+                    : theme === "light"
+                      ? 0.6 + i * 0.08
+                      : 0.28 + i * 0.12
+                }
                 strokeWidth={i === 4 ? 2 : 1.2}
               />
             ))}

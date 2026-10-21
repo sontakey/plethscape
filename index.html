@@ -1,10 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0d0c0b" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#fdfdfe" />
+    <meta name="color-scheme" content="light" />
+    <style>
+      html {
+        color-scheme: light;
+        background: #fdfdfe;
+        color: #111318;
+      }
+      html[data-theme="dark"] {
+        color-scheme: dark;
+        background: #0d0c0b;
+        color: #f3ede7;
+      }
+    </style>
+    <script>
+      (() => {
+        let theme = "light";
+        try {
+          if (localStorage.getItem("plethscape-appearance") === "dark")
+            theme = "dark";
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === "dark" ? "#0d0c0b" : "#fdfdfe";
+        document.querySelector('meta[name="color-scheme"]').content = theme;
+      })();
+    </script>
     <title>Plethscape: Interactive PPG Waveform Simulator | ChatPPG</title>
     <meta
       name="description"

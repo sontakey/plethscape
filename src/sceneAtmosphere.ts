@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { Theme } from "./theme";
 
 /** Decorative atmosphere, kept separate from blood flow and optical sampling. */
 export function createSceneAtmosphere() {
@@ -8,6 +9,8 @@ export function createSceneAtmosphere() {
     time: { value: 0 },
     pulse: { value: 0 },
     strength: { value: 1 },
+    particleColor: { value: new THREE.Vector3(1, 0.62, 0.31) },
+    haloColor: { value: new THREE.Vector3(0.73, 0.31, 0.105) },
   };
   // Deterministic seeds; animation stays on the GPU and adds only two draw calls.
   const count = 1800;
@@ -45,11 +48,11 @@ export function createSceneAtmosphere() {
         brightness = (.16 + seed * .35) * (1. + pulse * .35);
       }`,
     fragmentShader: `
-      uniform float strength; varying float brightness;
+      uniform float strength; uniform vec3 particleColor; varying float brightness;
       void main() {
         float r = length(gl_PointCoord - .5) * 2.;
         float alpha = exp(-r*r*5.) * (1.-smoothstep(.7, 1., r));
-        gl_FragColor = vec4(vec3(1., .62, .31), alpha * brightness * strength);
+        gl_FragColor = vec4(particleColor, alpha * brightness * strength);
       }`,
   });
   const particles = new THREE.Points(geometry, material);
@@ -64,13 +67,13 @@ export function createSceneAtmosphere() {
     blending: THREE.AdditiveBlending,
     vertexShader: `varying vec2 vUv; void main() { vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
     fragmentShader: `
-      uniform float pulse; uniform float strength; varying vec2 vUv;
+      uniform float pulse; uniform float strength; uniform vec3 haloColor; varying vec2 vUv;
       void main() {
         vec2 p = (vUv-.5)*vec2(1.35,1.);
         float glow = exp(-dot(p,p)*19.);
         float shoulder = exp(-dot(p-vec2(0.,.13),p-vec2(0.,.13))*40.);
         float alpha = (glow*.04 + shoulder*.012) * strength;
-        gl_FragColor=vec4(vec3(.73,.31,.105),alpha);
+        gl_FragColor=vec4(haloColor,alpha);
       }`,
   });
   const halo = new THREE.Mesh(haloGeometry, haloMaterial);
@@ -79,6 +82,21 @@ export function createSceneAtmosphere() {
   group.add(halo);
   return {
     group,
+    setTheme(theme: Theme) {
+      const light = theme === "light";
+      uniforms.strength.value = light ? 0.24 : 1;
+      if (light) {
+        uniforms.particleColor.value.set(0.28, 0.37, 0.5);
+        uniforms.haloColor.value.set(0.5, 0.6, 0.74);
+      } else {
+        uniforms.particleColor.value.set(1, 0.62, 0.31);
+        uniforms.haloColor.value.set(0.73, 0.31, 0.105);
+      }
+      for (const layer of [material, haloMaterial]) {
+        layer.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+        layer.needsUpdate = true;
+      }
+    },
     update(time: number, phase: number, reduced: boolean, enabled: boolean) {
       group.visible = enabled;
       uniforms.time.value = reduced ? 0 : time;

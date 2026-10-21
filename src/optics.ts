@@ -17,9 +17,9 @@ export const OPTICAL_BANDS = {
   infrared: {
     name: "Infrared",
     nm: "940 nm",
-    color: 0xf3cdaa,
+    color: 0xa994e6,
     depth: 1.65,
-    note: "Infrared is invisible to us; warm white makes its deeper paths visible here.",
+    note: "Infrared is invisible to us; violet false color makes its deeper paths visible here.",
   },
 };
 

@@ -10,6 +10,8 @@ async function ready(page: Page) {
 }
 async function openStudio(page: Page) {
   await ready(page);
+  if (page.viewportSize()!.width < 701)
+    await page.getByRole("button", { name: "Signal details ↑" }).click();
   await page
     .getByRole("button", { name: "Compare locations", exact: true })
     .click();
@@ -36,7 +38,7 @@ test("site discovery starts at the wrist and opens anatomical comparisons direct
     selector.getByRole("button", { name: "Select Sensor band", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   const previews = await selector
-    .locator("svg path:not(.site-preview-axis)")
+    .locator(".site-selector-preview svg path:not(.site-preview-axis)")
     .evaluateAll((paths) => paths.map((path) => path.getAttribute("d")));
   expect(new Set(previews).size).toBe(7);
   await page
@@ -55,17 +57,18 @@ test("site discovery starts at the wrist and opens anatomical comparisons direct
     page.getByRole("button", { name: "Compare locations", exact: true }),
   ).toBeFocused();
   await page.setViewportSize({ width: 390, height: 1100 });
-  await selector
-    .getByRole("button", { name: "Select Toe band", exact: true })
-    .click();
+  const mobileLocation = page.getByRole("combobox", {
+    name: "Wearable location",
+    exact: true,
+  });
+  await mobileLocation.selectOption("toe");
+  await expect(mobileLocation).toHaveValue("toe");
   await expect(
     page.getByRole("img", {
       name: /^Synthetic streaming PPG waveform at the toe/,
     }),
   ).toBeVisible();
-  await expect(
-    selector.getByRole("button", { name: "Select Toe band", exact: true }),
-  ).toBeInViewport();
+  await expect(mobileLocation).toBeInViewport();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -122,7 +125,26 @@ test("captured pulse scrubs both scenes, supports fiducials and resumes live exp
     .poll(() => number(page, "anatomy-canvas", "data-simulation-time"))
     .not.toBe(before);
   await page.getByRole("button", { name: "Pause beat", exact: true }).click();
-  await page.waitForTimeout(150);
+  await expect(
+    page.getByRole("button", { name: "Play beat", exact: true }),
+  ).toBeVisible();
+  // The renderer can publish its final paused frame on a 250ms software cadence.
+  let previousTime = -1;
+  await expect
+    .poll(
+      async () => {
+        const time = await number(
+          page,
+          "anatomy-canvas",
+          "data-simulation-time",
+        );
+        const settled = time === previousTime;
+        previousTime = time;
+        return settled;
+      },
+      { intervals: [300] },
+    )
+    .toBe(true);
   const frozen = await number(page, "anatomy-canvas", "data-simulation-time");
   await page.waitForTimeout(300);
   expect(await number(page, "anatomy-canvas", "data-simulation-time")).toBe(
@@ -190,7 +212,7 @@ test("phone inspection, keyboard seeking and repeat entry keep a clean layout", 
     ),
   ).toBe(true);
   await page
-    .getByRole("button", { name: "← Back to live", exact: true })
+    .getByRole("button", { name: "Return to live exploration ↗", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Compare locations", exact: true })

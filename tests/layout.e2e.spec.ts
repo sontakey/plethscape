@@ -22,7 +22,7 @@ test("desktop typography, selected wearable and visible advanced controls", asyn
   await page.evaluate(() => document.fonts.ready);
   expect(
     await page.locator("h1").evaluate((e) => getComputedStyle(e).fontFamily),
-  ).toContain("Space Grotesk");
+  ).toContain("DM Sans");
   await page.screenshot({ path: "artifacts/layout-desktop.png" });
 });
 
@@ -35,11 +35,15 @@ test("mobile leads with body and signal and keeps settings in a usable drawer", 
     page.getByRole("button", { name: "Adjust physiology" }),
   ).toBeVisible();
   await expect(page.locator(".desktop-physiology")).toBeHidden();
+  await expect(page.getByTestId("anatomy-canvas")).toHaveAttribute(
+    "data-body-loaded",
+    "true",
+  );
+  await expect(page.locator("#signal-workspace")).toBeVisible();
   const body = await page.locator(".body-panel").boundingBox();
   const signal = await page.locator(".signal-panel").last().boundingBox();
-  const controls = await page.locator(".control-rail").boundingBox();
   expect(body!.y).toBeLessThan(signal!.y);
-  expect(signal!.y).toBeLessThan(controls!.y);
+  await expect(page.locator(".control-rail")).toBeHidden();
   await page
     .getByRole("combobox", { name: "Wearable location" })
     .selectOption("finger");

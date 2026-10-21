@@ -9,6 +9,7 @@ import {
 } from "./simulation";
 import { analyzePulse, FIDUCIALS, type FiducialId } from "./fiducials";
 import { OPTICAL_BANDS, type Wavelength } from "./optics";
+import { getChartPalette, useTheme } from "./theme";
 type Props = {
   clock: RefObject<{ time: number; running: boolean }>;
   physiology: Physiology;
@@ -44,6 +45,8 @@ const steps = [
   },
 ];
 export default function SignalStudio(p: Props) {
+  const { theme } = useTheme();
+  const colors = getChartPalette(theme);
   const [sites, setSites] = useState<SiteId[]>(() =>
     Array.from(new Set([p.site, "finger", "wrist", "ear"] as SiteId[])).slice(
       0,
@@ -198,13 +201,13 @@ export default function SignalStudio(p: Props) {
                 x2="320"
                 y1={86 - (v / 1.7) * 72}
                 y2={86 - (v / 1.7) * 72}
-                stroke="#352a21"
+                stroke={colors.grid}
               />
             ))}
             <path
               d={activeRow.path}
               fill="none"
-              stroke="#ffbf85"
+              stroke={colors.trace}
               strokeWidth="2"
             />
             {activeX >= 0 && activeX <= 320 && (
@@ -214,14 +217,14 @@ export default function SignalStudio(p: Props) {
                   x2={activeX}
                   y1="3"
                   y2="89"
-                  stroke="#f4e0c9"
+                  stroke={colors.bright}
                   opacity=".5"
                 />
                 <circle
                   cx={activeX}
                   cy={86 - (activePulse / 1.7) * 72}
                   r="4"
-                  fill="#ffbf85"
+                  fill={colors.trace}
                 />
               </g>
             )}
@@ -389,6 +392,7 @@ export default function SignalStudio(p: Props) {
                 aria-label={`${row.label.name} captured PPG pulse, ${Math.round(row.delay * 1000)} milliseconds modeled transit, ${aligned ? "aligned by onset" : "shared arrival timeline"}`}
                 data-testid={`site-trace-${row.site}`}
                 data-cursor-time={local.toFixed(6)}
+                fill={colors.text}
               >
                 {[0, 0.5, 1, 1.5].map((value) => (
                   <line
@@ -397,7 +401,7 @@ export default function SignalStudio(p: Props) {
                     x2="320"
                     y1={86 - (value / 1.7) * 72}
                     y2={86 - (value / 1.7) * 72}
-                    stroke="#352a21"
+                    stroke={colors.grid}
                     strokeWidth=".65"
                   />
                 ))}
@@ -406,13 +410,15 @@ export default function SignalStudio(p: Props) {
                   x2={aligned ? 0 : (row.delay / span) * 320}
                   y1="10"
                   y2="87"
-                  stroke="#9b7958"
+                  stroke={colors.annotation}
                   strokeDasharray="3 4"
                 />
                 <path
                   d={row.path}
                   fill="none"
-                  stroke={p.site === row.site ? "#ffbf85" : "#bfa486"}
+                  stroke={
+                    p.site === row.site ? colors.trace : colors.comparison
+                  }
                   strokeWidth="1.8"
                 />
                 {x >= 0 && x <= 320 && (
@@ -422,15 +428,15 @@ export default function SignalStudio(p: Props) {
                       x2={x}
                       y1="8"
                       y2="88"
-                      stroke="#f4e0c9"
+                      stroke={colors.bright}
                       opacity=".45"
                     />
                     <circle
                       cx={x}
                       cy={86 - (pulse / 1.7) * 72}
                       r="3.8"
-                      fill="#ffbd83"
-                      stroke="#fff0df"
+                      fill={colors.trace}
+                      stroke={colors.surface}
                     />
                   </g>
                 )}

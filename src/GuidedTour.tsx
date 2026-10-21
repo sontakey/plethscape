@@ -24,7 +24,7 @@ export const TOUR_STEPS = [
     prompt:
       "A wrist reference is saved. Select the finger and compare the two pulse contours.",
     result:
-      "Only location changed. Compare the amber finger pulse with the dashed wrist reference: look at the relative height and the later rise.",
+      "Only location changed. Compare the finger pulse with the dashed wrist reference: look at the relative height and the later rise.",
     why: "Local vessels and tissue shape an optical pulse. These illustrative contours are not a ranking of commercial device accuracy.",
   },
   {
@@ -50,7 +50,7 @@ export const TOUR_STEPS = [
     prompt:
       "Keep your eye on the five-second window. Increase the mean heart rate to 120 bpm.",
     result:
-      "The amber beats are closer together. At a mean of 120 bpm, about ten beats fit in five seconds; the reference remains at 72 bpm.",
+      "The beats are closer together. At a mean of 120 bpm, about ten beats fit in five seconds; the reference remains at 72 bpm.",
     why: "Heart rate sets average beat spacing. This simulation also includes small timing variations, so individual intervals are not all exactly the same.",
   },
   {

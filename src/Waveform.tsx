@@ -11,6 +11,7 @@ import {
 
 import { analyzePulse, FIDUCIALS, type FiducialId } from "./fiducials";
 import { getRhythm, RHYTHMS } from "./rhythm";
+import { getChartPalette, getTheme, subscribeTheme } from "./theme";
 
 type WaveformProps = {
   physiology: Physiology;
@@ -21,15 +22,6 @@ type WaveformProps = {
   annotate?: boolean;
   windowSeconds?: number;
   selectedFiducial?: FiducialId;
-};
-
-const COLORS = {
-  trace: "#efaa70",
-  comparison: "#b7a4d1",
-  cyan: "#82d9dc",
-  grid: "#39322b",
-  text: "#a1978d",
-  bright: "#f3ede7",
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -76,6 +68,8 @@ export default function Waveform(props: WaveformProps) {
     };
 
     const draw = () => {
+      const theme = getTheme();
+      const colors = getChartPalette(theme);
       const {
         physiology,
         site,
@@ -118,7 +112,7 @@ export default function Waveform(props: WaveformProps) {
       ctx.clearRect(0, 0, width, height);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.font = '12px "Inter Variable", "SFMono-Regular", Consolas, monospace';
+      ctx.font = '12px "DM Sans Variable", "DM Sans", system-ui, sans-serif';
       ctx.textBaseline = "middle";
 
       // The vertical scale stays fixed as physiology changes, preserving amplitude.
@@ -130,13 +124,13 @@ export default function Waveform(props: WaveformProps) {
       ctx.setLineDash([]);
       for (const tick of ticks) {
         const y = mapY(tick);
-        ctx.strokeStyle = COLORS.grid;
+        ctx.strokeStyle = colors.grid;
         ctx.lineWidth = 0.65;
         ctx.beginPath();
         ctx.moveTo(pad.left, y);
         ctx.lineTo(width - pad.right, y);
         ctx.stroke();
-        ctx.fillStyle = COLORS.text;
+        ctx.fillStyle = colors.text;
         ctx.textAlign = "right";
         ctx.fillText(tick.toFixed(accelerometer ? 0 : 1), pad.left - 9, y);
       }
@@ -145,14 +139,14 @@ export default function Waveform(props: WaveformProps) {
       for (let i = 0; i <= divisions * 4; i++) {
         const major = i % 4 === 0;
         const x = pad.left + (i / (divisions * 4)) * plotWidth;
-        ctx.strokeStyle = major ? COLORS.grid : "#29241f";
+        ctx.strokeStyle = major ? colors.grid : colors.gridMinor;
         ctx.lineWidth = major ? 0.65 : 0.35;
         ctx.beginPath();
         ctx.moveTo(x, pad.top);
         ctx.lineTo(x, height - pad.bottom);
         ctx.stroke();
         if (!major) continue;
-        ctx.fillStyle = COLORS.text;
+        ctx.fillStyle = colors.text;
         ctx.textAlign =
           i === 0 ? "left" : i === divisions * 4 ? "right" : "center";
         const fraction = i / (divisions * 4);
@@ -165,15 +159,15 @@ export default function Waveform(props: WaveformProps) {
       }
 
       ctx.textAlign = "left";
-      ctx.fillStyle = COLORS.text;
+      ctx.fillStyle = colors.text;
       ctx.fillText(accelerometer ? "g" : "a.u.", 3, 10);
       if (!beat) {
         ctx.textAlign = "right";
         if (accelerometer) {
           const axes = [
-            { label: "X", color: COLORS.trace },
-            { label: "Y", color: COLORS.cyan },
-            { label: "Z", color: COLORS.comparison },
+            { label: "X", color: colors.axes.x },
+            { label: "Y", color: colors.axes.y },
+            { label: "Z", color: colors.axes.z },
           ];
           axes.forEach((axis, index) => {
             ctx.fillStyle = axis.color;
@@ -226,13 +220,16 @@ export default function Waveform(props: WaveformProps) {
         ctx.strokeStyle = color;
         ctx.lineWidth = glow ? 1.8 : 1.3;
         ctx.setLineDash(dashed ? [5, 5] : []);
-        ctx.shadowBlur = glow ? 7 : 0;
+        ctx.shadowBlur = glow && theme === "dark" ? 7 : 0;
         ctx.shadowColor = color;
         ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.setLineDash([]);
       };
 
+      const traceColor = accelerometer
+        ? colors.axes.x
+        : colors.channels[physiology.wavelength ?? "green"];
       ctx.save();
       ctx.beginPath();
       ctx.rect(pad.left, pad.top - 2, plotWidth, plotHeight + 4);
@@ -248,26 +245,23 @@ export default function Waveform(props: WaveformProps) {
           0,
           height - pad.bottom,
         );
-        fill.addColorStop(0, "rgba(239, 170, 112, 0.10)");
-        fill.addColorStop(1, "rgba(239, 170, 112, 0.005)");
+        fill.addColorStop(0, `${traceColor}1a`);
+        fill.addColorStop(1, `${traceColor}01`);
         ctx.fillStyle = fill;
         ctx.fill();
       }
-      if (comparison) stroke(comparison, COLORS.comparison, false, true);
+      if (comparison) stroke(comparison, colors.comparison, false, true);
       if (axisY && axisZ) {
-        stroke(axisZ, COLORS.comparison);
-        stroke(axisY, COLORS.cyan);
+        stroke(axisZ, colors.axes.z);
+        stroke(axisY, colors.axes.y);
       }
-      const traceColor = accelerometer
-        ? COLORS.trace
-        : `#${OPTICAL_BANDS[physiology.wavelength ?? "green"].color.toString(16)}`;
       stroke(samples, traceColor, !accelerometer);
 
       if (!beat && !accelerometer) {
         const endpointY = mapY(samples[count - 1]);
         ctx.fillStyle = traceColor;
         ctx.shadowColor = traceColor;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = theme === "dark" ? 12 : 0;
         ctx.beginPath();
         ctx.arc(width - pad.right, endpointY, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -281,10 +275,10 @@ export default function Waveform(props: WaveformProps) {
           label: FIDUCIALS[point.id].name.replace(/ \(.*\)/, ""),
           color:
             point.id === latestRef.current.selectedFiducial
-              ? COLORS.bright
-              : COLORS.trace,
+              ? colors.bright
+              : colors.annotation,
         }));
-        ctx.font = '13px "Inter Variable", system-ui, sans-serif';
+        ctx.font = '13px "DM Sans Variable", "DM Sans", system-ui, sans-serif';
         const columns = width < 480 ? 2 : 3;
         const rows = Math.ceil(landmarks.length / columns);
         const cellWidth = (width - 16) / columns;
@@ -307,7 +301,7 @@ export default function Waveform(props: WaveformProps) {
           ctx.stroke();
           ctx.setLineDash([]);
           ctx.globalAlpha = 1;
-          ctx.fillStyle = "#151412";
+          ctx.fillStyle = colors.surface;
           ctx.beginPath();
           ctx.arc(
             x,
@@ -320,7 +314,7 @@ export default function Waveform(props: WaveformProps) {
           ctx.stroke();
           ctx.fillStyle = landmark.color;
           ctx.textAlign = "center";
-          ctx.fillStyle = "#151412";
+          ctx.fillStyle = colors.surface;
           ctx.fillRect(
             landmark.labelX - ctx.measureText(landmark.label).width / 2 - 4,
             landmark.labelY - 9,
@@ -332,7 +326,7 @@ export default function Waveform(props: WaveformProps) {
         }
         if (!landmarks.some((point) => point.id === "dn") && width > 290) {
           ctx.textAlign = "right";
-          ctx.fillStyle = COLORS.text;
+          ctx.fillStyle = colors.text;
           ctx.fillText(
             "No distinct notch",
             width - pad.right,
@@ -351,7 +345,7 @@ export default function Waveform(props: WaveformProps) {
         const index = Math.round(fraction * (count - 1));
         const x = mapX(index);
         const y = mapY(samples[index]);
-        ctx.strokeStyle = "#b0a294";
+        ctx.strokeStyle = colors.muted;
         ctx.lineWidth = 0.75;
         ctx.setLineDash([3, 4]);
         ctx.beginPath();
@@ -359,7 +353,7 @@ export default function Waveform(props: WaveformProps) {
         ctx.lineTo(x, height - pad.bottom);
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle = COLORS.trace;
+        ctx.fillStyle = traceColor;
         ctx.beginPath();
         ctx.arc(x, clamp(y, pad.top, height - pad.bottom), 3, 0, Math.PI * 2);
         ctx.fill();
@@ -378,15 +372,15 @@ export default function Waveform(props: WaveformProps) {
           pad.top + 4,
           height - pad.bottom - 29,
         );
-        ctx.fillStyle = "rgba(24, 21, 18, 0.97)";
-        ctx.strokeStyle = "#645244";
+        ctx.fillStyle = colors.tooltipBackground;
+        ctx.strokeStyle = colors.tooltipBorder;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.roundRect(boxX, boxY, boxWidth, 26, 5);
         ctx.fill();
         ctx.stroke();
         ctx.textAlign = "center";
-        ctx.fillStyle = COLORS.bright;
+        ctx.fillStyle = colors.bright;
         ctx.fillText(text, boxX + boxWidth / 2, boxY + 13, boxWidth - 14);
       }
     };
@@ -439,6 +433,10 @@ export default function Waveform(props: WaveformProps) {
       draw();
     };
 
+    const unsubscribeTheme = subscribeTheme(() => {
+      // Theme changes repaint paused plots without changing their sampled time.
+      dirty = true;
+    });
     resize();
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(host);
@@ -456,6 +454,7 @@ export default function Waveform(props: WaveformProps) {
 
     return () => {
       cancelAnimationFrame(frame);
+      unsubscribeTheme();
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
       canvas.removeEventListener("pointermove", onPointerMove);
@@ -468,8 +467,8 @@ export default function Waveform(props: WaveformProps) {
 
   const accessibleLabel =
     props.mode === "accelerometer"
-      ? "Simulated three-axis accelerometer data in g. Amber: X, cyan: Y, lavender: Z. Use left and right arrow keys to inspect values."
-      : `Synthetic ${props.mode === "beat" ? "single-cycle" : "streaming"} PPG waveform at the ${props.site === "forehead" ? "temple" : String(props.site).replaceAll("_", " ")}. ${OPTICAL_BANDS[props.physiology.wavelength ?? "green"].name} light, ${OPTICAL_BANDS[props.physiology.wavelength ?? "green"].nm}. Amplitude is in arbitrary units. ${RHYTHMS[getRhythm(props.physiology.rhythm)].name} teaching setting.${props.compare ? " Dashed lavender trace shows the saved comparison." : ""} Use left and right arrow keys to inspect values.`;
+      ? "Simulated three-axis accelerometer data in g. Orange: X, teal: Y, purple: Z. Use left and right arrow keys to inspect values."
+      : `Synthetic ${props.mode === "beat" ? "single-cycle" : "streaming"} PPG waveform at the ${props.site === "forehead" ? "temple" : String(props.site).replaceAll("_", " ")}. ${OPTICAL_BANDS[props.physiology.wavelength ?? "green"].name} light, ${OPTICAL_BANDS[props.physiology.wavelength ?? "green"].nm}.${props.physiology.wavelength === "infrared" ? " Invisible infrared is shown in violet false color." : ""} Amplitude is in arbitrary units. ${RHYTHMS[getRhythm(props.physiology.rhythm)].name} teaching setting.${props.compare ? " Dashed purple trace shows the saved comparison." : ""} Use left and right arrow keys to inspect values.`;
 
   return (
     <div

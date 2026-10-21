@@ -1,43 +1,241 @@
-/* A quiet application header, with the model remaining the focal point. */
+/* ChatPPG product identity and workspace navigation share a compact header. */
 .immersive-shell .app-header {
-  height: 66px;
-  min-height: 66px;
+  height: auto;
+  min-height: 70px;
   gap: 16px;
-  padding: 8px 22px;
+  padding: 10px 22px;
   border: 0;
-  background: linear-gradient(180deg, #10100ff2, #10100f00);
+  border-bottom: 1px solid light-dark(var(--theme-line), #ead5bc12);
+  background: light-dark(var(--theme-paper), #10100ff2);
 }
-.immersive-shell .app-header .brand { gap: 9px; }
-.immersive-shell .app-header .brand-wordmark { font-size: 21px; font-weight: 560; letter-spacing: -.7px; color: #e8ded1; }
-.immersive-shell .app-header .brand small { display: none; }
-.immersive-shell .app-header .brand-icon { width: 30px; height: 30px; border-radius: 0; color: #edb57b; background: transparent; box-shadow: none; }
-.immersive-shell .app-header .brand-icon svg { width: 28px; height: 28px; }
-.immersive-shell .app-header nav { height: auto; margin: 0 auto; gap: 4px; padding: 3px; border: 1px solid #ead5bc12; background: #211d1880; border-radius: 12px; }
-.immersive-shell .app-header .nav-item { height: 36px; padding: 0 15px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #aea497; transition: background .15s, color .15s; }
-.immersive-shell .app-header .nav-item.active { background: #dca87317; color: #f0c493; }
-.immersive-shell .app-header .nav-item::after { display: none; }
-.immersive-shell .app-header .nav-item:hover { background: #ffffff0b; color: #f2e5d5; }
-.immersive-shell .app-header .header-actions { display: flex; gap: 8px; }
-.immersive-shell .app-header .simulation-badge { display: inline-flex; padding: 0; border: 0; background: transparent; }
-.immersive-shell .app-header .replay-demo { padding: 8px 12px; border: 1px solid #dfbf952c; border-radius: 10px; color: #d7c2aa; background: #201b1680; font-size: 12px; font-weight: 500; }
-.immersive-shell .app-header .replay-demo:hover:not(:disabled) { background: #38291d; border-color: #d7a46770; }
-.immersive-shell .app-header .replay-demo:disabled { opacity: .45; }
-.immersive-shell .app-header .mobile-menu-toggle { width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: #d8cabb; }
-.immersive-shell .app-header .mobile-menu-toggle:hover { background: #e0ba8414; }
-.immersive-shell .app-header :is(a,button):focus-visible { outline: 2px solid #eab779; outline-offset: 3px; }
-.immersive-shell .learning-page .learning-navigation { position: sticky; inset: 0 0 auto; z-index: 3; display: flex; flex-shrink: 0; width: 100%; background: #10110ff5; border-bottom: 1px solid #ead5bc12; }
-.learning-header-spacer { width: 100px; }
+.chatppg-tool-home {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.7px;
+  white-space: nowrap;
+  color: light-dark(var(--theme-ink), #f1f3f7);
+}
+.chatppg-tool-home svg {
+  width: 32px;
+  height: 32px;
+}
+.chatppg-tool-home .brand-period {
+  color: light-dark(var(--theme-accent), #8eacff);
+}
+.immersive-shell .app-header .brand {
+  gap: 9px;
+  min-width: 0;
+  min-height: 44px;
+  padding-left: 16px;
+  border-left: 1px solid light-dark(var(--theme-line), #ead5bc26);
+}
+.immersive-shell .app-header .brand-wordmark {
+  font-family: var(--font-body);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.7px;
+  color: light-dark(var(--theme-ink), #e8ded1);
+}
+.immersive-shell .app-header .brand small {
+  display: none;
+}
+.immersive-shell .app-header nav {
+  display: flex;
+  height: auto;
+  margin: 0 auto;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid light-dark(var(--theme-line), #ead5bc12);
+  background: light-dark(var(--theme-inset), #211d1880);
+  border-radius: 8px;
+}
+.immersive-shell .app-header .nav-item {
+  min-height: 44px;
+  height: auto;
+  padding: 0 15px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  color: light-dark(var(--theme-muted), #aea497);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.immersive-shell .app-header .nav-item.active {
+  background: light-dark(var(--theme-selected), #dca87317);
+  color: light-dark(var(--theme-accent), #f0c493);
+}
+.immersive-shell .app-header .nav-item::after {
+  display: none;
+}
+.immersive-shell .app-header .nav-item:hover {
+  background: light-dark(var(--theme-hover), #ffffff0b);
+  color: light-dark(var(--theme-ink), #f2e5d5);
+}
+.immersive-shell .app-header .header-actions {
+  display: flex;
+  gap: 8px;
+}
+.immersive-shell .app-header .simulation-badge {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.immersive-shell .app-header .replay-demo {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid light-dark(var(--theme-line-strong), #dfbf952c);
+  border-radius: 4px;
+  color: light-dark(var(--theme-ink), #d7c2aa);
+  background: light-dark(var(--theme-surface), #201b1680);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.immersive-shell .app-header .replay-demo:hover:not(:disabled) {
+  background: light-dark(var(--theme-hover), #38291d);
+  border-color: light-dark(var(--theme-selection-line), #d7a46770);
+}
+.immersive-shell .app-header .replay-demo:disabled {
+  opacity: 0.55;
+}
+.immersive-shell .app-header .mobile-menu-toggle {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: light-dark(var(--theme-ink), #d8cabb);
+}
+.immersive-shell .app-header .mobile-menu-toggle:hover {
+  background: light-dark(var(--theme-hover), #e0ba8414);
+}
+.immersive-shell .app-header :is(a, button, select):focus-visible {
+  outline: 2px solid light-dark(var(--theme-accent), #8eacff);
+  outline-offset: 3px;
+}
+.appearance-control {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  font-size: 14px;
+  color: light-dark(var(--theme-muted), #b7becb);
+}
+.appearance-control select {
+  min-height: 44px;
+  min-width: 100px;
+  max-width: 100%;
+  padding: 8px 10px;
+  font: 16px var(--font-body);
+  border: 1px solid light-dark(var(--theme-line-strong), #59534d);
+  border-radius: 4px;
+  color: light-dark(var(--theme-ink), #f1f3f7);
+  background: light-dark(var(--theme-surface), #201b16);
+  cursor: pointer;
+}
+.mobile-menu-links .appearance-control {
+  justify-content: space-between;
+}
+.mobile-menu-links .all-tools-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: light-dark(var(--theme-accent), #8eacff);
+  font-size: 16px;
+}
+.immersive-shell .learning-page .learning-navigation {
+  position: sticky;
+  inset: 0 0 auto;
+  z-index: 3;
+  display: flex;
+  flex-shrink: 0;
+  width: 100%;
+  background: light-dark(var(--theme-paper), #10110ff5);
+  border-bottom: 1px solid light-dark(var(--theme-line), #ead5bc12);
+}
+.learning-header-spacer {
+  width: 100px;
+}
+@media (max-width: 1100px) {
+  .app-header .appearance-control > span {
+    display: none;
+  }
+  .immersive-shell .app-header {
+    gap: 12px;
+    padding-inline: 16px;
+  }
+  .immersive-shell .app-header .nav-item {
+    padding-inline: 10px;
+  }
+}
+@media (max-width: 860px) {
+  .app-header .chatppg-tool-home > span {
+    display: none;
+  }
+}
 @media (max-width: 700px) {
   .immersive-shell .app-header,
-  .immersive-shell:not(.studio-open) .app-header { height: calc(60px + env(safe-area-inset-top)); min-height: 60px; padding: calc(8px + env(safe-area-inset-top)) 16px 8px; }
+  .immersive-shell:not(.studio-open) .app-header {
+    height: calc(64px + env(safe-area-inset-top));
+    min-height: 64px;
+    gap: 12px;
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  }
   .immersive-shell .app-header nav,
-  .immersive-shell .app-header .header-actions { display: none; }
-  .immersive-shell .app-header .brand-wordmark { font-size: 20px; }
-  .immersive-shell .app-header .mobile-menu-toggle { display: grid; margin-left: auto; }
-  .immersive-shell .learning-page .learning-navigation { gap: 8px; }
-  .immersive-shell .learning-page .learning-navigation nav { display: flex; width: auto; flex: 0 0 auto; margin-left: auto; margin-right: 0; }
-  .immersive-shell .learning-page .learning-navigation .nav-item { padding: 0 10px; font-size: 12px; min-height: 40px; }
-  .immersive-shell .learning-page .learning-navigation .nav-item svg { display: none; }
-  .learning-header-spacer { display: none; }
-  .immersive-shell .learning-page .learning-navigation .brand-wordmark { font-size: 18px; }
+  .immersive-shell .app-header .header-actions,
+  .immersive-shell .app-header .desktop-appearance {
+    display: none;
+  }
+  .immersive-shell .app-header .brand {
+    padding-left: 12px;
+  }
+  .immersive-shell .app-header .brand-wordmark {
+    font-size: 20px;
+  }
+  .immersive-shell .app-header .mobile-menu-toggle {
+    display: grid;
+    margin-left: auto;
+  }
+  .immersive-shell .learning-page .learning-navigation {
+    height: auto;
+    min-height: 64px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-inline: 16px;
+  }
+  .immersive-shell .learning-page .learning-navigation nav {
+    order: 4;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 0;
+  }
+  .immersive-shell .learning-page .learning-navigation .appearance-control {
+    margin-left: auto;
+  }
+  .immersive-shell .learning-page .learning-navigation .nav-item {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .immersive-shell .learning-page .learning-navigation .brand-wordmark {
+    font-size: 18px;
+  }
+  .learning-header-spacer {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .immersive-shell .app-header .nav-item {
+    transition: none;
+  }
 }

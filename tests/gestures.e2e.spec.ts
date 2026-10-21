@@ -5,12 +5,24 @@ test.beforeEach(async ({ page }) => {
   const messages: string[] = [];
   errors.set(page, messages);
   page.on("pageerror", (e) => messages.push(e.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.getByTestId("anatomy-canvas")).toHaveAttribute(
     "data-body-loaded",
     "true",
   );
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
+  await expect(page.locator(".intro-demo")).toBeHidden();
   await page.getByRole("button", { name: "Reset camera", exact: true }).click();
+  await expect
+    .poll(async () =>
+      Number(
+        await page
+          .getByTestId("anatomy-canvas")
+          .getAttribute("data-camera-distance"),
+      ),
+    )
+    .toBeGreaterThan(6);
   await page
     .getByRole("button", { name: "Pause simulation", exact: true })
     .click();
@@ -32,18 +44,84 @@ async function meshPoint(page: Page, site: string) {
   };
 }
 
+async function waitForProjection(page: Page, site: string) {
+  const scene = page.getByTestId("anatomy-canvas");
+  const marker = page.getByRole("button", {
+    name: `Select ${site} on body`,
+    exact: true,
+    includeHidden: true,
+  });
+  const snapshot = async () => {
+    const bounds = (await scene.boundingBox())!;
+    return JSON.stringify({
+      width: bounds.width,
+      height: bounds.height,
+      camera: await scene.getAttribute("data-camera-position"),
+      target: await scene.getAttribute("data-camera-target"),
+      x: await marker.getAttribute("data-mesh-x"),
+      y: await marker.getAttribute("data-mesh-y"),
+    });
+  };
+  await expect
+    .poll(async () => {
+      const before = await snapshot();
+      // Software rendering updates at 250ms. Observe across two possible frames
+      // so a newly resized portrait canvas cannot reuse desktop projections.
+      await page.waitForTimeout(550);
+      return before === (await snapshot());
+    })
+    .toBe(true);
+}
+
 for (const site of ["Temple", "Top of wrist"])
   test(`scrolled phone pinch holds the ${site} under the fingers while zooming and panning`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 1000 });
     const scene = page.getByTestId("anatomy-canvas");
-    await scene.evaluate((e) =>
-      window.scrollTo(0, e.getBoundingClientRect().top + window.scrollY - 70),
+    // The collapsed phone workspace fits on screen. Expand real signal
+    // content so this test exercises gestures with a document scroll offset.
+    await page
+      .getByRole("button", { name: "Signal details ↑", exact: true })
+      .click();
+    await expect(page.locator("#signal-workspace")).toHaveClass(
+      /mobile-signal-expanded/,
     );
-    await page.waitForTimeout(150);
-    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+    // Finish any intro framing and resize projection before resetting in the
+    // actual phone viewport, then measure only the settled mobile geometry.
+    await waitForProjection(page, site);
+    await page
+      .getByRole("button", { name: "Reset camera", exact: true })
+      .click();
+    // Frame the head below the floating mobile controls before touching it.
+    // These are the same zoom controls available to a phone user.
+    await page.getByRole("button", { name: "Zoom out", exact: true }).click();
+    await page.getByRole("button", { name: "Zoom out", exact: true }).click();
+    await waitForProjection(page, site);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const unscrolled = await meshPoint(page, site);
+    const mobileControls = (await page
+      .locator(".mobile-adjust-bar")
+      .boundingBox())!;
+    expect(unscrolled.y).toBeGreaterThan(
+      mobileControls.y + mobileControls.height + 12,
+    );
+    const originalSceneTop = (await scene.boundingBox())!.y;
+    // The current mobile scene begins at document y=0 beneath its floating
+    // header. Scroll by a real positive offset while keeping the touched body
+    // site in view; a fixed 100px minimum would put the temple above the screen.
+    const scrollOffset = Math.min(120, unscrolled.y - 24);
+    expect(scrollOffset).toBeGreaterThan(0);
+    await page.evaluate((offset) => window.scrollTo(0, offset), scrollOffset);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeCloseTo(scrollOffset, 0);
+    expect((await scene.boundingBox())!.y).toBeCloseTo(
+      originalSceneTop - scrollOffset,
+      0,
+    );
     const initial = await meshPoint(page, site);
+    expect(initial.y).toBeGreaterThanOrEqual(23);
     const before = Number(await scene.getAttribute("data-camera-distance"));
     const client = await page.context().newCDPSession(page);
     await client.send("Emulation.setTouchEmulationEnabled", {
@@ -54,6 +132,15 @@ for (const site of ["Temple", "Top of wrist"])
       { x: initial.x - spread + shift, y: initial.y, id: 0 },
       { x: initial.x + spread + shift, y: initial.y, id: 1 },
     ];
+    expect(
+      await scene.evaluate(
+        (element, touches) =>
+          touches.every(({ x, y }) =>
+            element.contains(document.elementFromPoint(x, y)),
+          ),
+        points(18, 0),
+      ),
+    ).toBe(true);
     await client.send("Input.dispatchTouchEvent", {
       type: "touchStart",
       touchPoints: points(18, 0),
@@ -97,8 +184,8 @@ for (const site of ["Temple", "Top of wrist"])
     ).toBeLessThan(1);
     await expect(scene).toHaveAttribute("data-device-focus", "none");
     await expect(
-      page.getByRole("button", { name: "Select Sensor band", exact: true }),
-    ).toHaveAttribute("aria-pressed", "true");
+      page.getByRole("combobox", { name: "Wearable location", exact: true }),
+    ).toHaveValue("wrist");
     // A fresh drag still orbits after the pinch has ended.
     const position = (await scene.getAttribute("data-camera-position"))!;
     const box = (await scene.boundingBox())!;

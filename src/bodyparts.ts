@@ -20,6 +20,7 @@ import { WEARABLE_SITES } from "./devices";
 import { createFlowTrails } from "./flowTrails";
 import { fitWearablesToSkin, upperSkinGeometry } from "./surfaceFit";
 import type { getCardiacState, SiteId } from "./simulation";
+import type { Theme } from "./theme";
 
 export type Presentation = "atlas" | "xray" | "surface";
 
@@ -232,6 +233,7 @@ export function createAnatomy(presentation: "male" | "female" = "male") {
     atlasFlowEnabled: { value: 1 },
     atlasHeart: { value: new THREE.Vector3(0.11, 2.64, 0.1) },
     atlasGlowColor: { value: new THREE.Color("#ff933f") },
+    atlasLightTheme: { value: 0 },
     atlasNeckPatch: { value: new THREE.Vector3(0, 3.145, 0) },
     atlasNeckReveal: { value: 0 },
   };
@@ -468,7 +470,7 @@ export function createAnatomy(presentation: "male" | "female" = "male") {
         shader.fragmentShader = shader.fragmentShader
           .replace(
             "uniform float atlasFlow;",
-            "uniform float atlasFlow;\nuniform vec3 atlasGlowColor;",
+            "uniform float atlasFlow;\nuniform vec3 atlasGlowColor;\nuniform float atlasLightTheme;",
           )
           .replace(
             "#include <emissivemap_fragment>",
@@ -480,6 +482,12 @@ export function createAnatomy(presentation: "male" | "female" = "male") {
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.32,.21,.145), gentleHead);
             diffuseColor.a = mix(diffuseColor.a, .40*(1.-atlasHeartFocus), gentleHead);
             totalEmissiveRadiance = mix(totalEmissiveRadiance, vec3(.018,.009,.006)+atlasGlowColor*pow(rim,2.)*.12, gentleHead);
+            // On a light stage the transparent outer shell needs a shaded edge,
+            // not an emissive halo. Internal anatomy and head skin keep their hues.
+            float lightShell = atlasLightTheme*(1.-atlasSurface)*(1.-gentleHead);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.16,.21,.29), lightShell);
+            diffuseColor.a = mix(diffuseColor.a, (.012+rim*.35)*(1.-atlasHeartFocus), lightShell);
+            totalEmissiveRadiance *= 1.-atlasLightTheme*.97;
             float patchSkin = 1.-smoothstep(.038,.073,distance(atlasPosition,atlasNeckPatch));
             diffuseColor.a = max(diffuseColor.a,patchSkin*.42*(1.-atlasHeartFocus));
             diffuseColor.rgb = mix(diffuseColor.rgb,vec3(.32,.21,.145),patchSkin*.65);
@@ -1205,6 +1213,9 @@ export function createAnatomy(presentation: "male" | "female" = "male") {
     },
     setGlow: (color: "blue" | "amber") => {
       shared.atlasGlowColor.value.set(color === "blue" ? "#5babff" : "#ff933f");
+    },
+    setTheme: (theme: Theme) => {
+      shared.atlasLightTheme.value = theme === "light" ? 1 : 0;
     },
     setCutaway: (enabled: boolean) => {
       shared.atlasCutaway.value = enabled ? 1 : 0;

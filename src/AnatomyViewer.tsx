@@ -24,6 +24,7 @@ import { createSceneAtmosphere } from "./sceneAtmosphere";
 import { createSensorAuras } from "./sensorAuras";
 import { installBodyGestures } from "./bodyGestures";
 import type { WearableSite } from "./devices";
+import { getTheme, subscribeTheme } from "./theme";
 
 export type Layers = {
   body: boolean;
@@ -40,7 +41,10 @@ interface Props {
   hideSelector?: boolean;
   hideSiteCard?: boolean;
   siteSelection?: number;
-  demoCamera?: { view: "full" | "wrist" | "ring" | "orbit"; nonce: number } | null;
+  demoCamera?: {
+    view: "full" | "wrist" | "ring" | "orbit";
+    nonce: number;
+  } | null;
   inspectRequest?: { site: SiteId; nonce: number } | null;
   active?: boolean;
   inspection?: boolean;
@@ -120,7 +124,6 @@ export default function AnatomyViewer(props: Props) {
       actions.current?.demo(null);
     }
   }, [props.demoCamera, ready]);
-
 
   useEffect(() => {
     if (props.pulseStart != null) actions.current?.reset();
@@ -236,9 +239,31 @@ export default function AnatomyViewer(props: Props) {
     // would amplify moving specular/flow highlights across the body.
     let sceneVisible = true;
     let sceneDirty = true;
+    let lightTheme = getTheme() === "light";
     const invalidateScene = () => {
       sceneDirty = true;
     };
+    const applyTheme = () => {
+      const theme = getTheme();
+      lightTheme = theme === "light";
+      renderer.setClearColor(lightTheme ? 0xf5f7fb : 0x010202, 0);
+      renderer.toneMappingExposure = lightTheme ? 0.9 : 0.95;
+      hemisphere.color.set(lightTheme ? 0xffffff : 0xf4eee2);
+      hemisphere.groundColor.set(lightTheme ? 0xabb4c1 : 0x17212b);
+      key.color.set(lightTheme ? 0xfffdf8 : 0xfff5e7);
+      rim.color.set(lightTheme ? 0xe3eaf5 : 0xffbd83);
+      red.color.set(lightTheme ? 0xf5ede3 : 0xf59c83);
+      groundMat.color.set(lightTheme ? 0x8796ac : 0x4d4640);
+      groundMat.opacity = lightTheme ? 0.2 : 0.24;
+      anatomy.setTheme(theme);
+      atmosphere.setTheme(theme);
+      auras.setTheme(theme);
+      element.dataset.theme = theme;
+      // Update the same scene, including when its simulation clock is paused.
+      invalidateScene();
+    };
+    applyTheme();
+    const unsubscribeTheme = subscribeTheme(applyTheme);
     controls.addEventListener("change", invalidateScene);
     const visibilityObserver = new IntersectionObserver(([entry]) => {
       sceneVisible = entry.isIntersecting;
@@ -290,13 +315,29 @@ export default function AnatomyViewer(props: Props) {
     actions.current = {
       demo: (view) => {
         demoOrbit = null;
-        if (!view) { cameraFlight = null; return; }
-        if (view === "wrist" || view === "ring") { actions.current?.select(view === "ring" ? "finger" : "wrist", false); return; }
+        if (!view) {
+          cameraFlight = null;
+          return;
+        }
+        if (view === "wrist" || view === "ring") {
+          actions.current?.select(view === "ring" ? "finger" : "wrist", false);
+          return;
+        }
         clearDeviceFocus();
-        setFocus(false); setHeartDetail(false); heartDetailRef.current = false;
-        rotateRef.current = false; setRotate(false);
-        cameraFlight = { from: camera.position.clone(), to: new THREE.Vector3(.12, 1.87, 6.45), targetFrom: controls.target.clone(), targetTo: new THREE.Vector3(0, 1.82, 0), elapsed: 0 };
-        if (view === "orbit") demoOrbit = { elapsed: 0, angle: Math.atan2(.12, 6.45) };
+        setFocus(false);
+        setHeartDetail(false);
+        heartDetailRef.current = false;
+        rotateRef.current = false;
+        setRotate(false);
+        cameraFlight = {
+          from: camera.position.clone(),
+          to: new THREE.Vector3(0.12, 1.87, 6.45),
+          targetFrom: controls.target.clone(),
+          targetTo: new THREE.Vector3(0, 1.82, 0),
+          elapsed: 0,
+        };
+        if (view === "orbit")
+          demoOrbit = { elapsed: 0, angle: Math.atan2(0.12, 6.45) };
         sceneDirty = true;
       },
       zoom: (factor) => {
@@ -373,18 +414,28 @@ export default function AnatomyViewer(props: Props) {
         // Center the wearable itself while retaining the surrounding body region.
         const target = deviceCenter.clone();
         const wideStage = element.clientWidth >= 1100;
-        const regionalDistance = id === "upperarm" ? 1.7 : id === "wrist" && element.clientWidth <= 700 ? 1.05 : 1.4;
+        const regionalDistance =
+          id === "upperarm"
+            ? 1.7
+            : id === "wrist" && element.clientWidth <= 700
+              ? 1.05
+              : 1.4;
         const distance =
-          (wideStage ? regionalDistance * 1.6 : regionalDistance) *
-          Math.max(1, 0.55 / camera.aspect) / 1.5;
+          ((wideStage ? regionalDistance * 1.6 : regionalDistance) *
+            Math.max(1, 0.55 / camera.aspect)) /
+          1.5;
         // View the sensor-bearing side of the head; the face points left on screen.
         const sideView = id === "ear" || id === "forehead";
         const angle = sideView ? Math.PI * 0.39 : 0.06;
-        const destination = target.clone().add(new THREE.Vector3(
-          Math.sin(angle) * distance,
-          0.04,
-          Math.cos(angle) * distance,
-        ));
+        const destination = target
+          .clone()
+          .add(
+            new THREE.Vector3(
+              Math.sin(angle) * distance,
+              0.04,
+              Math.cos(angle) * distance,
+            ),
+          );
         if (reducedMotion.matches && !demoCameraActive.current) {
           camera.position.copy(destination);
           controls.target.copy(target);
@@ -750,12 +801,19 @@ export default function AnatomyViewer(props: Props) {
       }
       anatomy.setHeartFocus(heartDetailRef.current);
       const effectivePresentation: Presentation = "atlas";
-      hemisphere.intensity = isolatedDeviceRef.current ? 0.8 : 0.85;
-      scene.environmentIntensity = isolatedDeviceRef.current ? 0.8 : 0.42;
-      key.intensity = 2.0;
-      rim.intensity = 1.25;
-      rim.color.set(0xffbd83);
-      red.intensity = 0.65;
+      hemisphere.intensity = isolatedDeviceRef.current
+        ? 0.8
+        : lightTheme
+          ? 1.05
+          : 0.85;
+      scene.environmentIntensity = isolatedDeviceRef.current
+        ? 0.8
+        : lightTheme
+          ? 0.48
+          : 0.42;
+      key.intensity = lightTheme ? 2.15 : 2.0;
+      rim.intensity = lightTheme ? 0.85 : 1.25;
+      red.intensity = lightTheme ? 0.28 : 0.65;
       if (previousPresentation !== effectivePresentation) {
         anatomy.setPresentation(effectivePresentation);
         previousPresentation = effectivePresentation;
@@ -822,7 +880,11 @@ export default function AnatomyViewer(props: Props) {
         demoOrbit.elapsed = Math.min(1, demoOrbit.elapsed + delta / 2.0);
         const t = demoOrbit.elapsed;
         const angle = demoOrbit.angle + Math.PI * 2 * (t * t * (3 - 2 * t));
-        camera.position.set(Math.sin(angle) * 6.45, 1.87, Math.cos(angle) * 6.45);
+        camera.position.set(
+          Math.sin(angle) * 6.45,
+          1.87,
+          Math.cos(angle) * 6.45,
+        );
         controls.target.set(0, 1.82, 0);
         controls.update();
         if (t >= 1) demoOrbit = null;
@@ -951,6 +1013,7 @@ export default function AnatomyViewer(props: Props) {
     });
     return () => {
       disposed = true;
+      unsubscribeTheme();
       renderer.setAnimationLoop(null);
       observer.disconnect();
       visibilityObserver.disconnect();
@@ -1167,9 +1230,16 @@ export default function AnatomyViewer(props: Props) {
         <div className="scene-loading" role="status" aria-live="polite">
           <PpgLoader />
           <span>
-            {loadProgress >= 100 ? "Preparing the 3D anatomy…" : loadProgress > 0 ? `Downloading anatomy · ${loadProgress}%` : "Downloading the 3D anatomy…"}
+            {loadProgress >= 100
+              ? "Preparing the 3D anatomy…"
+              : loadProgress > 0
+                ? `Downloading anatomy · ${loadProgress}%`
+                : "Downloading the 3D anatomy…"}
           </span>
-          <small className="loading-explanation">The tour starts when the model is ready. First visits can take a little longer.</small>
+          <small className="loading-explanation">
+            The tour starts when the model is ready. First visits can take a
+            little longer.
+          </small>
         </div>
       )}
       {error && (
@@ -1177,8 +1247,8 @@ export default function AnatomyViewer(props: Props) {
           <Cube size={35} />
           <b>The anatomy could not load</b>
           <p>
-            Reload to retry the anatomy download and start the simulation,
-            and use a browser with WebGL hardware acceleration.
+            Reload to retry the anatomy download and start the simulation, and
+            use a browser with WebGL hardware acceleration.
           </p>
           <button onClick={() => window.location.reload()}>
             Reload anatomy

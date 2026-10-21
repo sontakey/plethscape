@@ -1,5 +1,7 @@
 import IntroDemo from "./IntroDemo";
 import PpgLoader from "./PpgLoader";
+import AppearanceSelect from "./AppearanceSelect";
+import ChatPpgBrand from "./ChatPpgBrand";
 import LearnPage, { type LearnTopic } from "./LearnPage";
 import { transitionMotion } from "./locomotion";
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
@@ -173,27 +175,51 @@ function Modal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {page ? <header className="app-header learning-navigation">
-        <h2 id={titleId} className="sr-only">{title}</h2>
-        <a className="brand" href="#workspace" aria-label="Plethscape home" onClick={(event) => { event.preventDefault(); onClose(); }}>
-          <span className="brand-icon"><WaveSine size={26} weight="bold" /></span>
-          <span className="brand-wordmark">Plethscape</span>
-        </a>
-        <nav aria-label="Main navigation">
-          <button className="nav-item" onClick={onClose}>Workspace</button>
-          <button className="nav-item active" aria-current="page"><BookOpen size={18} /> Learn</button>
-        </nav>
-        <div className="learning-header-spacer" aria-hidden="true" />
-      </header> : <div className="modal-header">
-        <h2 id={titleId}>{title}</h2>
-        <button
-          className="icon-button"
-          aria-label={page ? "Back to Workspace" : "Close dialog"}
-          onClick={onClose}
-        >
-          {page ? <>Back to Workspace <ArrowRight size={18} /></> : <X size={20} />}
-        </button>
-      </div>}
+      {page ? (
+        <header className="app-header learning-navigation">
+          <h2 id={titleId} className="sr-only">
+            {title}
+          </h2>
+          <ChatPpgBrand />
+          <a
+            className="brand"
+            href="#workspace"
+            aria-label="Plethscape home"
+            onClick={(event) => {
+              event.preventDefault();
+              onClose();
+            }}
+          >
+            <span className="brand-wordmark">Plethscape</span>
+          </a>
+          <nav aria-label="Main navigation">
+            <button className="nav-item" onClick={onClose}>
+              Workspace
+            </button>
+            <button className="nav-item active" aria-current="page">
+              <BookOpen size={18} /> Learn
+            </button>
+          </nav>
+          <AppearanceSelect />
+        </header>
+      ) : (
+        <div className="modal-header">
+          <h2 id={titleId}>{title}</h2>
+          <button
+            className="icon-button"
+            aria-label={page ? "Back to Workspace" : "Close dialog"}
+            onClick={onClose}
+          >
+            {page ? (
+              <>
+                Back to Workspace <ArrowRight size={18} />
+              </>
+            ) : (
+              <X size={20} />
+            )}
+          </button>
+        </div>
+      )}
       <div className="modal-body">{children}</div>
     </dialog>
   );
@@ -288,7 +314,10 @@ export default function App() {
   const [visited, setVisited] = useState<SiteId[]>([]);
   const [anatomyReady, setAnatomyReady] = useState(false);
   const [demoReplay, setDemoReplay] = useState(0);
-  const [demoCamera, setDemoCamera] = useState<{ view: "full" | "wrist" | "ring" | "orbit"; nonce: number } | null>(null);
+  const [demoCamera, setDemoCamera] = useState<{
+    view: "full" | "wrist" | "ring" | "orbit";
+    nonce: number;
+  } | null>(null);
   const [pulseStart, setPulseStart] = useState<number | null>(null);
   const clock = useRef({ time: 8, running: true });
   const setPhysiology = (update: SetStateAction<Physiology>) => {
@@ -770,6 +799,7 @@ export default function App() {
         Skip to PPG signal
       </a>
       <header className="app-header">
+        <ChatPpgBrand />
         <a
           className="brand"
           href="#"
@@ -780,9 +810,6 @@ export default function App() {
           }}
           aria-label="Plethscape home"
         >
-          <span className="brand-icon">
-            <WaveSine size={26} weight="bold" />
-          </span>
           <span>
             <span className="brand-wordmark">Plethscape</span>
             <small>HUMAN PHYSIOLOGY, EXPLORED.</small>
@@ -817,9 +844,16 @@ export default function App() {
             <BookOpen size={18} /> Learn
           </button>
         </nav>
+        <AppearanceSelect className="desktop-appearance" />
         <div className="header-actions">
           <span className="simulation-badge">
-            <button className="replay-demo" disabled={!anatomyReady} onClick={() => setDemoReplay(value => value + 1)}>Replay demo</button>
+            <button
+              className="replay-demo"
+              disabled={!anatomyReady}
+              onClick={() => setDemoReplay((value) => value + 1)}
+            >
+              Replay demo
+            </button>
           </span>
         </div>
       </header>
@@ -830,6 +864,10 @@ export default function App() {
           onClose={() => setMobileMenuOpen(false)}
         >
           <div className="mobile-menu-links">
+            <a className="all-tools-link" href="https://chatppg.com/tools">
+              ← All ChatPPG tools
+            </a>
+            <AppearanceSelect />
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -848,7 +886,15 @@ export default function App() {
             >
               <BookOpen size={20} /> Learn through exploration
             </button>
-            <button disabled={!anatomyReady} onClick={() => { setMobileMenuOpen(false); setDemoReplay(value => value + 1); }}>Replay demo</button>
+            <button
+              disabled={!anatomyReady}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setDemoReplay((value) => value + 1);
+              }}
+            >
+              Replay demo
+            </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -1070,24 +1116,56 @@ export default function App() {
           </aside>
 
           <section className="body-panel" aria-label="Interactive anatomy">
-            <IntroDemo ready={anatomyReady} replay={demoReplay}
+            <IntroDemo
+              ready={anatomyReady}
+              replay={demoReplay}
               onStep={(step) => {
-                if (step === 0) { if (captured) closeStudio(); chooseSite("wrist"); setMode("stream"); setBaseline(null); setTourStep(null); setExperience("explore"); setRunning(true); }
-                const view = step === 0 || step === 3 ? "full" : step === 4 ? "ring" : step === 5 ? "orbit" : "wrist";
+                if (step === 0) {
+                  if (captured) closeStudio();
+                  chooseSite("wrist");
+                  setMode("stream");
+                  setBaseline(null);
+                  setTourStep(null);
+                  setExperience("explore");
+                  setRunning(true);
+                }
+                const view =
+                  step === 0 || step === 3
+                    ? "full"
+                    : step === 4
+                      ? "ring"
+                      : step === 5
+                        ? "orbit"
+                        : "wrist";
                 if (step === 4) chooseSite("finger");
                 setDemoCamera({ view, nonce: Date.now() });
                 const band = step === 2 || step === 3 ? "infrared" : "green";
                 setWavelength(band);
-                setPhysiology({ ...DEFAULT_PHYSIOLOGY, age: 32, heartRate: step >= 3 ? 130 : 72, activity: step >= 3 ? "run" : "rest", wavelength: band });
+                setPhysiology({
+                  ...DEFAULT_PHYSIOLOGY,
+                  age: 32,
+                  heartRate: step >= 3 ? 130 : 72,
+                  activity: step >= 3 ? "run" : "rest",
+                  wavelength: band,
+                });
               }}
               onCancel={() => setDemoCamera(null)}
               onFinish={() => {
                 chooseSite("wrist");
                 setDemoCamera({ view: "wrist", nonce: Date.now() });
                 setWavelength("green");
-                setPhysiology({ ...DEFAULT_PHYSIOLOGY, age: 32, heartRate: 72, wavelength: "green", activity: "rest" });
-                setChangeNote("Your turn: choose a wearable, change the light, or explore a lesson.");
-              }} />
+                setPhysiology({
+                  ...DEFAULT_PHYSIOLOGY,
+                  age: 32,
+                  heartRate: 72,
+                  wavelength: "green",
+                  activity: "rest",
+                });
+                setChangeNote(
+                  "Your turn: choose a wearable, change the light, or explore a lesson.",
+                );
+              }}
+            />
             <Suspense
               fallback={
                 <div className="scene-loading">
@@ -1158,7 +1236,11 @@ export default function App() {
             <div className="body-status">
               <span>
                 <i className={`status-dot ${running ? "live" : ""}`} />
-                {!anatomyReady ? "LOADING SIMULATION" : running ? "SIMULATION RUNNING" : "SIMULATION PAUSED"}
+                {!anatomyReady
+                  ? "LOADING SIMULATION"
+                  : running
+                    ? "SIMULATION RUNNING"
+                    : "SIMULATION PAUSED"}
               </span>
               <span>
                 {captured && studioView === "sensor"
@@ -1207,356 +1289,375 @@ export default function App() {
             hidden={!!captured || !anatomyReady}
             style={!anatomyReady ? { display: "none" } : undefined}
           >
-            {anatomyReady && <>
-            <button
-              className="mobile-signal-toggle"
-              aria-expanded={mobileSignalExpanded}
-              onClick={() => setMobileSignalExpanded((v) => !v)}
-            >
-              {mobileSignalExpanded ? "Minimize signal ↓" : "Signal details ↑"}
-            </button>
-            <section className="signal-section">
-              <div className="signal-header">
-                <div>
-                  <span className="section-overline">
-                    PHOTOPLETHYSMOGRAPHY · SIMULATED
-                  </span>
-                  <h2>
-                    {selected.name}
-                    <span className="signal-site-dot" />
-                  </h2>
-                </div>
+            {anatomyReady && (
+              <>
                 <button
-                  className={`play-button ${!running ? "paused" : ""}`}
-                  onClick={() => setRunning((p) => !p)}
-                  aria-label={
-                    running ? "Pause simulation" : "Resume simulation"
-                  }
-                  title={running ? "Pause simulation" : "Resume simulation"}
+                  className="mobile-signal-toggle"
+                  aria-expanded={mobileSignalExpanded}
+                  onClick={() => setMobileSignalExpanded((v) => !v)}
                 >
-                  {running ? (
-                    <Pause size={16} weight="fill" />
-                  ) : (
-                    <Play size={16} weight="fill" />
-                  )}
+                  {mobileSignalExpanded
+                    ? "Minimize signal ↓"
+                    : "Signal details ↑"}
                 </button>
-              </div>
-              <div className="signal-meta">
-                <span>
-                  <span className="mini-lime-dot" />
-                  {selected.mode === "reference"
-                    ? "Modeled neck pulse reference"
-                    : selected.mode === "transmission"
-                      ? "Transmissive optical site"
-                      : "Reflective optical site"}
-                </span>
-                <span>Simulated signal</span>
-              </div>
-              <section
-                className="spectral-control"
-                aria-label="Wavelength exploration"
-              >
-                <div
-                  className="studio-bands"
-                  role="group"
-                  aria-label="Light wavelength"
-                >
-                  {(Object.keys(OPTICAL_BANDS) as Wavelength[]).map((w) => (
+                <section className="signal-section">
+                  <div className="signal-header">
+                    <div>
+                      <span className="section-overline">
+                        PHOTOPLETHYSMOGRAPHY · SIMULATED
+                      </span>
+                      <h2>
+                        {selected.name}
+                        <span className="signal-site-dot" />
+                      </h2>
+                    </div>
                     <button
-                      key={w}
-                      aria-pressed={wavelength === w}
-                      onClick={() => setWavelength(w)}
+                      className={`play-button ${!running ? "paused" : ""}`}
+                      onClick={() => setRunning((p) => !p)}
+                      aria-label={
+                        running ? "Pause simulation" : "Resume simulation"
+                      }
+                      title={running ? "Pause simulation" : "Resume simulation"}
                     >
-                      {OPTICAL_BANDS[w].name}
-                      <small>{OPTICAL_BANDS[w].nm}</small>
+                      {running ? (
+                        <Pause size={16} weight="fill" />
+                      ) : (
+                        <Play size={16} weight="fill" />
+                      )}
                     </button>
-                  ))}
-                </div>
-              </section>
-              {getRhythm(physiology.rhythm) !== "sinus" && (
-                <div className="rhythm-active-badge">
-                  {RHYTHMS[getRhythm(physiology.rhythm)].name} · simulated
-                </div>
-              )}
-              <div className="signal-actions">
-                <button
-                  ref={studioTrigger}
-                  className="compare-locations-button"
-                  disabled={!anatomyReady}
-                  onClick={() => {
-                    setSceneOnly(false);
-                    openStudio();
-                    setStudioView("body");
-                  }}
-                >
-                  <svg
-                    width="22"
-                    height="18"
-                    viewBox="0 0 24 20"
-                    fill="none"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      d="M1 8h3l2-5 4 11 3-8 2 2h8"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M1 14h5l2-5 4 9 3-7 2 3h6"
-                      stroke="currentColor"
-                      strokeOpacity=".45"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>{" "}
-                  Compare locations
-                </button>
-                <button
-                  className={`baseline-button ${baseline ? "enabled" : ""}`}
-                  aria-label={baseline ? undefined : "Save reference"}
-                  onClick={() =>
-                    setBaseline((b) =>
-                      b ? null : { physiology: { ...physiology }, site },
-                    )
-                  }
-                >
-                  <span>
-                    {baseline ? <CheckCircle size={16} /> : <Stack size={16} />}
+                  </div>
+                  <div className="signal-meta">
                     <span>
-                      {baseline
-                        ? `Comparing: ${SITES.find((s) => s.id === baseline.site)?.name} · ${baseline.physiology.age}y · ${OPTICAL_BANDS[baseline.physiology.wavelength ?? "green"].nm} · ${baseline.physiology.heartRate} bpm · ${RHYTHMS[getRhythm(baseline.physiology.rhythm)].short}`
-                        : "Save reference"}
+                      <span className="mini-lime-dot" />
+                      {selected.mode === "reference"
+                        ? "Modeled neck pulse reference"
+                        : selected.mode === "transmission"
+                          ? "Transmissive optical site"
+                          : "Reflective optical site"}
                     </span>
-                  </span>
-                  {baseline ? <X size={13} /> : <PlusSmall />}
-                </button>
-              </div>
-              <div className="signal-chart">
-                <Waveform
-                  physiology={physiology}
-                  site={site}
-                  clock={clock}
-                  compare={baseline}
-                  mode={mode}
-                  annotate={annotate}
-                  selectedFiducial={selectedFiducial}
-                  windowSeconds={
-                    streamWindow ??
-                    (getRhythm(physiology.rhythm) === "sinus" ? 5 : 10)
-                  }
-                />
-              </div>
-              <WavelengthComparison physiology={physiology} site={site} />
-              {site === "wrist" && <DeviceAttribution mobile />}
-              <details className="spectral-explanation">
-                <summary>Light penetration & simulation science</summary>
-                <div
-                  className="spectral-depth"
-                  aria-label="Relative light penetration, schematic"
-                >
-                  <span>Skin surface</span>
-                  {(Object.keys(OPTICAL_BANDS) as Wavelength[]).map((w) => (
-                    <div key={w} className={wavelength === w ? "active" : ""}>
-                      <span>{OPTICAL_BANDS[w].name}</span>
-                      <i
-                        style={{
-                          width: `${OPTICAL_BANDS[w].depth * 55}%`,
-                          background: `#${OPTICAL_BANDS[w].color.toString(16)}`,
-                        }}
+                    <span>Simulated signal</span>
+                  </div>
+                  <section
+                    className="spectral-control"
+                    aria-label="Wavelength exploration"
+                  >
+                    <div
+                      className="studio-bands"
+                      role="group"
+                      aria-label="Light wavelength"
+                    >
+                      {(Object.keys(OPTICAL_BANDS) as Wavelength[]).map((w) => (
+                        <button
+                          key={w}
+                          aria-pressed={wavelength === w}
+                          onClick={() => setWavelength(w)}
+                        >
+                          {OPTICAL_BANDS[w].name}
+                          <small>{OPTICAL_BANDS[w].nm}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                  {getRhythm(physiology.rhythm) !== "sinus" && (
+                    <div className="rhythm-active-badge">
+                      {RHYTHMS[getRhythm(physiology.rhythm)].name} · simulated
+                    </div>
+                  )}
+                  <div className="signal-actions">
+                    <button
+                      ref={studioTrigger}
+                      className="compare-locations-button"
+                      disabled={!anatomyReady}
+                      onClick={() => {
+                        setSceneOnly(false);
+                        openStudio();
+                        setStudioView("body");
+                      }}
+                    >
+                      <svg
+                        width="22"
+                        height="18"
+                        viewBox="0 0 24 20"
+                        fill="none"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M1 8h3l2-5 4 11 3-8 2 2h8"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M1 14h5l2-5 4 9 3-7 2 3h6"
+                          stroke="currentColor"
+                          strokeOpacity=".45"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>{" "}
+                      Compare locations
+                    </button>
+                    <button
+                      className={`baseline-button ${baseline ? "enabled" : ""}`}
+                      aria-label={baseline ? undefined : "Save reference"}
+                      onClick={() =>
+                        setBaseline((b) =>
+                          b ? null : { physiology: { ...physiology }, site },
+                        )
+                      }
+                    >
+                      <span>
+                        {baseline ? (
+                          <CheckCircle size={16} />
+                        ) : (
+                          <Stack size={16} />
+                        )}
+                        <span>
+                          {baseline
+                            ? `Comparing: ${SITES.find((s) => s.id === baseline.site)?.name} · ${baseline.physiology.age}y · ${OPTICAL_BANDS[baseline.physiology.wavelength ?? "green"].nm} · ${baseline.physiology.heartRate} bpm · ${RHYTHMS[getRhythm(baseline.physiology.rhythm)].short}`
+                            : "Save reference"}
+                        </span>
+                      </span>
+                      {baseline ? <X size={13} /> : <PlusSmall />}
+                    </button>
+                  </div>
+                  <div className="signal-chart">
+                    <Waveform
+                      physiology={physiology}
+                      site={site}
+                      clock={clock}
+                      compare={baseline}
+                      mode={mode}
+                      annotate={annotate}
+                      selectedFiducial={selectedFiducial}
+                      windowSeconds={
+                        streamWindow ??
+                        (getRhythm(physiology.rhythm) === "sinus" ? 5 : 10)
+                      }
+                    />
+                  </div>
+                  <WavelengthComparison physiology={physiology} site={site} />
+                  {site === "wrist" && <DeviceAttribution mobile />}
+                  <details className="spectral-explanation">
+                    <summary>Light penetration & simulation science</summary>
+                    <div
+                      className="spectral-depth"
+                      aria-label="Relative light penetration, schematic"
+                    >
+                      <span>Skin surface</span>
+                      {(Object.keys(OPTICAL_BANDS) as Wavelength[]).map((w) => (
+                        <div
+                          key={w}
+                          className={wavelength === w ? "active" : ""}
+                        >
+                          <span>{OPTICAL_BANDS[w].name}</span>
+                          <i
+                            style={{
+                              width: `${OPTICAL_BANDS[w].depth * 55}%`,
+                              background: `var(--wavelength-${w})`,
+                            }}
+                          />
+                        </div>
+                      ))}
+                      <small>
+                        Overlapping sampling regions · relative depth, not
+                        millimeters
+                      </small>
+                    </div>
+                    <p>
+                      {physiology.activity === "rest"
+                        ? "Compare subtle pulse contours at rest, then try Walk or Run."
+                        : "Motion adds baseline wander, impact spikes and contact loss—amplified for red and infrared in this model."}
+                    </p>
+                    <details className="wavelength-evidence">
+                      <summary>What is modeled?</summary>
+                      <p>
+                        Wavelength changes the illustrative contour and motion
+                        sensitivity at each site. Green generally samples
+                        shallower tissue; red and infrared reach deeper. Depth
+                        is schematic: skin, contact and sensor geometry matter.
+                        This is not measured device performance or an
+                        oxygen-saturation model.
+                      </p>
+                      <p>
+                        <a
+                          href="https://pubmed.ncbi.nlm.nih.gov/20703691/"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Green vs infrared during movement ↗
+                        </a>{" "}
+                        ·{" "}
+                        <a
+                          href="https://www.cinc.org/archives/2020/pdf/CinC2020-179.pdf"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Multi-wavelength pulse contours ↗
+                        </a>
+                      </p>
+                      <p>
+                        The exact shapes and noise strengths are teaching
+                        assumptions, not universal rankings. Single beat removes
+                        artifacts to reveal morphology; Live stream shows
+                        contamination. Save a reference before switching
+                        wavelengths to compare.
+                      </p>
+                    </details>
+                  </details>
+                  <div className="chart-controls">
+                    <div
+                      className="segmented"
+                      aria-label="Waveform display mode"
+                    >
+                      <button
+                        className={mode === "stream" ? "selected" : ""}
+                        onClick={() => setMode("stream")}
+                      >
+                        Live stream
+                      </button>
+                      <button
+                        className={mode === "beat" ? "selected" : ""}
+                        onClick={() => setMode("beat")}
+                      >
+                        Single beat
+                      </button>
+                    </div>
+                    {mode === "beat" ? (
+                      <button
+                        className={`annotation-button ${annotate ? "active" : ""}`}
+                        aria-pressed={annotate}
+                        onClick={() => setAnnotate((a) => !a)}
+                      >
+                        Labels
+                      </button>
+                    ) : (
+                      <span className="chart-window">
+                        {streamWindow ??
+                          (getRhythm(physiology.rhythm) === "sinus"
+                            ? 5
+                            : 10)}{" "}
+                        s window
+                      </span>
+                    )}
+                  </div>
+                  {mode === "stream" && (
+                    <div className="trace-scale-controls">
+                      <label htmlFor="trace-time-window">Time window</label>
+                      <select
+                        id="trace-time-window"
+                        value={
+                          streamWindow ??
+                          (getRhythm(physiology.rhythm) === "sinus" ? 5 : 10)
+                        }
+                        onChange={(e) =>
+                          setStreamWindow(Number(e.target.value))
+                        }
+                      >
+                        <option value={2.5}>2.5 s · closer</option>
+                        <option value={5}>5 s</option>
+                        <option value={10}>10 s · rhythm</option>
+                      </select>
+                      <span>Fixed amplitude scale</span>
+                    </div>
+                  )}
+                </section>
+
+                {tourStep !== null && (
+                  <GuidedTour
+                    step={tourStep}
+                    applied={tourApplied || (tourStep !== 0 && tourMatched)}
+                    matched={tourMatched}
+                    ready={anatomyReady}
+                    onApply={applyTour}
+                    onStep={startTour}
+                    onExit={exitTour}
+                  />
+                )}
+                <p className="signal-change-note" role="status">
+                  <span>What changed</span>
+                  {changeNote}
+                </p>
+                {mode === "stream" && (
+                  <section
+                    className="representative-panel"
+                    aria-label="Representative pulse detail"
+                  >
+                    <div className="representative-heading">
+                      <h3>A closer look at one pulse</h3>
+                      <span>Shared amplitude scale</span>
+                    </div>
+                    <div className="representative-chart">
+                      <Waveform
+                        physiology={physiology}
+                        site={site}
+                        clock={clock}
+                        mode="beat"
+                        compare={baseline}
+                        annotate
+                        selectedFiducial={selectedFiducial}
                       />
                     </div>
-                  ))}
-                  <small>
-                    Overlapping sampling regions · relative depth, not
-                    millimeters
-                  </small>
-                </div>
-                <p>
-                  {physiology.activity === "rest"
-                    ? "Compare subtle pulse contours at rest, then try Walk or Run."
-                    : "Motion adds baseline wander, impact spikes and contact loss—amplified for red and infrared in this model."}
-                </p>
-                <details className="wavelength-evidence">
-                  <summary>What is modeled?</summary>
-                  <p>
-                    Wavelength changes the illustrative contour and motion
-                    sensitivity at each site. Green generally samples shallower
-                    tissue; red and infrared reach deeper. Depth is schematic:
-                    skin, contact and sensor geometry matter. This is not
-                    measured device performance or an oxygen-saturation model.
-                  </p>
-                  <p>
-                    <a
-                      href="https://pubmed.ncbi.nlm.nih.gov/20703691/"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Green vs infrared during movement ↗
-                    </a>{" "}
-                    ·{" "}
-                    <a
-                      href="https://www.cinc.org/archives/2020/pdf/CinC2020-179.pdf"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Multi-wavelength pulse contours ↗
-                    </a>
-                  </p>
-                  <p>
-                    The exact shapes and noise strengths are teaching
-                    assumptions, not universal rankings. Single beat removes
-                    artifacts to reveal morphology; Live stream shows
-                    contamination. Save a reference before switching wavelengths
-                    to compare.
-                  </p>
-                </details>
-              </details>
-              <div className="chart-controls">
-                <div className="segmented" aria-label="Waveform display mode">
-                  <button
-                    className={mode === "stream" ? "selected" : ""}
-                    onClick={() => setMode("stream")}
-                  >
-                    Live stream
-                  </button>
-                  <button
-                    className={mode === "beat" ? "selected" : ""}
-                    onClick={() => setMode("beat")}
-                  >
-                    Single beat
-                  </button>
-                </div>
-                {mode === "beat" ? (
-                  <button
-                    className={`annotation-button ${annotate ? "active" : ""}`}
-                    aria-pressed={annotate}
-                    onClick={() => setAnnotate((a) => !a)}
-                  >
-                    Labels
-                  </button>
-                ) : (
-                  <span className="chart-window">
-                    {streamWindow ??
-                      (getRhythm(physiology.rhythm) === "sinus" ? 5 : 10)}{" "}
-                    s window
-                  </span>
+                    <details className="pulse-guide">
+                      <summary>Understand the landmarks</summary>
+                      <FiducialGuide
+                        physiology={physiology}
+                        site={site}
+                        selected={selectedFiducial}
+                        onSelect={setSelectedFiducial}
+                      />
+                    </details>
+                  </section>
                 )}
-              </div>
-              {mode === "stream" && (
-                <div className="trace-scale-controls">
-                  <label htmlFor="trace-time-window">Time window</label>
-                  <select
-                    id="trace-time-window"
-                    value={
-                      streamWindow ??
-                      (getRhythm(physiology.rhythm) === "sinus" ? 5 : 10)
-                    }
-                    onChange={(e) => setStreamWindow(Number(e.target.value))}
-                  >
-                    <option value={2.5}>2.5 s · closer</option>
-                    <option value={5}>5 s</option>
-                    <option value={10}>10 s · rhythm</option>
-                  </select>
-                  <span>Fixed amplitude scale</span>
-                </div>
-              )}
-            </section>
 
-            {tourStep !== null && (
-              <GuidedTour
-                step={tourStep}
-                applied={tourApplied || (tourStep !== 0 && tourMatched)}
-                matched={tourMatched}
-                ready={anatomyReady}
-                onApply={applyTour}
-                onStep={startTour}
-                onExit={exitTour}
-              />
-            )}
-            <p className="signal-change-note" role="status">
-              <span>What changed</span>
-              {changeNote}
-            </p>
-            {mode === "stream" && (
-              <section
-                className="representative-panel"
-                aria-label="Representative pulse detail"
-              >
-                <div className="representative-heading">
-                  <h3>A closer look at one pulse</h3>
-                  <span>Shared amplitude scale</span>
-                </div>
-                <div className="representative-chart">
-                  <Waveform
-                    physiology={physiology}
-                    site={site}
-                    clock={clock}
-                    mode="beat"
-                    compare={baseline}
-                    annotate
-                    selectedFiducial={selectedFiducial}
-                  />
-                </div>
-                <details className="pulse-guide">
-                  <summary>Understand the landmarks</summary>
+                {mode === "beat" && annotate && (
                   <FiducialGuide
                     physiology={physiology}
                     site={site}
                     selected={selectedFiducial}
                     onSelect={setSelectedFiducial}
                   />
-                </details>
-              </section>
-            )}
+                )}
 
-            {mode === "beat" && annotate && (
-              <FiducialGuide
-                physiology={physiology}
-                site={site}
-                selected={selectedFiducial}
-                onSelect={setSelectedFiducial}
-              />
+                <div className="signal-readouts">
+                  {" "}
+                  <LivePhysiology
+                    physiology={physiology}
+                    clock={clock}
+                    representativeBeat={mode === "beat"}
+                  />
+                  {mode === "stream" && (
+                    <RecentBeats
+                      clock={clock}
+                      physiology={physiology}
+                      site={site}
+                    />
+                  )}
+                  <div className="signal-metrics">
+                    <div>
+                      <span title="Illustrative travel delay from cardiac ejection to this site. Excludes ECG pre-ejection time; not a calibrated measurement.">
+                        Modeled transit <Info size={11} />
+                      </span>
+                      <strong>
+                        {Math.round(metrics.transitMs)}
+                        <small>ms</small>
+                      </strong>
+                    </div>
+                    <div>
+                      <span
+                        title={`${metrics.notchProminence}% rebound above a local minimum, relative to the clean systolic peak. Descriptors use a teaching scale, not clinical thresholds.`}
+                      >
+                        Notch prominence
+                      </span>
+                      <strong className="metric-word">{notchLabel}</strong>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-
-            <div className="signal-readouts">
-              {" "}
-              <LivePhysiology
-                physiology={physiology}
-                clock={clock}
-                representativeBeat={mode === "beat"}
-              />
-              {mode === "stream" && (
-                <RecentBeats
-                  clock={clock}
-                  physiology={physiology}
-                  site={site}
-                />
-              )}
-              <div className="signal-metrics">
-                <div>
-                  <span title="Illustrative travel delay from cardiac ejection to this site. Excludes ECG pre-ejection time; not a calibrated measurement.">
-                    Modeled transit <Info size={11} />
-                  </span>
-                  <strong>
-                    {Math.round(metrics.transitMs)}
-                    <small>ms</small>
-                  </strong>
-                </div>
-                <div>
-                  <span
-                    title={`${metrics.notchProminence}% rebound above a local minimum, relative to the clean systolic peak. Descriptors use a teaching scale, not clinical thresholds.`}
-                  >
-                    Notch prominence
-                  </span>
-                  <strong className="metric-word">{notchLabel}</strong>
-                </div>
-              </div>
-            </div>
-            </>}
           </aside>
         </div>
 
@@ -1601,11 +1702,17 @@ export default function App() {
           </section>
         )}
 
-        {returnToLearn && <button className="back-to-lesson" onClick={() => setDialog("guide")}><BookOpen size={17} /> Back to lesson</button>}
+        {returnToLearn && (
+          <button className="back-to-lesson" onClick={() => setDialog("guide")}>
+            <BookOpen size={17} /> Back to lesson
+          </button>
+        )}
         <footer className="app-footer">
           <span>
             <span className="footer-brand">Plethscape</span>
-            <span className="footer-tagline">A little curiosity. A deeper understanding.</span>
+            <span className="footer-tagline">
+              A little curiosity. A deeper understanding.
+            </span>
           </span>
           <button onClick={() => setDialog("sources")}>
             <span>Educational simulation · Model & sources</span>
@@ -1620,67 +1727,102 @@ export default function App() {
           {toast}
         </div>
       )}
-      <Modal open={dialog === "guide"} page title="Plethscape · Learn" onClose={() => setDialog(null)}>
-        <LearnPage ready={anatomyReady} onSources={() => { setSourcesFromLearn(true); setDialog("sources"); }}
+      <Modal
+        open={dialog === "guide"}
+        page
+        title="Plethscape · Learn"
+        onClose={() => setDialog(null)}
+      >
+        <LearnPage
+          ready={anatomyReady}
+          onSources={() => {
+            setSourcesFromLearn(true);
+            setDialog("sources");
+          }}
           onStartTour={() => startTour(0)}
           onTry={(topic: LearnTopic, settings) => {
             if (captured) closeStudio();
             setTourStep(null);
             setExperience("explore");
             setPulseStart(null);
-            const resting = { ...DEFAULT_PHYSIOLOGY, age: topic === "pulse" ? settings.age : 32, heartRate: 72, wavelength: settings.band };
-            setPhysiology(topic === "motion" ? { ...resting, activity: settings.activity, heartRate: settings.activity === "run" ? 130 : settings.activity === "walk" ? 98 : 72 } : resting);
+            const resting = {
+              ...DEFAULT_PHYSIOLOGY,
+              age: topic === "pulse" ? settings.age : 32,
+              heartRate: 72,
+              wavelength: settings.band,
+            };
+            setPhysiology(
+              topic === "motion"
+                ? {
+                    ...resting,
+                    activity: settings.activity,
+                    heartRate:
+                      settings.activity === "run"
+                        ? 130
+                        : settings.activity === "walk"
+                          ? 98
+                          : 72,
+                  }
+                : resting,
+            );
             chooseSite(topic === "locations" ? settings.site : "wrist");
-            setBaseline(topic === "locations" ? { physiology: resting, site: "finger" } : null);
+            setBaseline(
+              topic === "locations"
+                ? { physiology: resting, site: "finger" }
+                : null,
+            );
             setWavelength(settings.band);
             setMode(topic === "pulse" ? "beat" : "stream");
             setMotionExpanded(topic === "motion");
             setMobileSignalExpanded(topic === "wavelengths");
             setRunning(true);
-            setChangeNote("Your lesson settings are applied. Change one setting at a time, then return to the lesson to review the explanation.");
+            setChangeNote(
+              "Your lesson settings are applied. Change one setting at a time, then return to the lesson to review the explanation.",
+            );
             setReturnToLearn(true);
             setDialog(null);
           }}
           onLocationTry={(action) => {
-                if (captured) closeStudio();
-                setTourStep(null);
-                setExperience("explore");
-                setPulseStart(null);
-                setWavelength("green");
-                const resting = {
-                  ...DEFAULT_PHYSIOLOGY,
-                  age: 32,
-                  heartRate: 72,
-                };
-                setPhysiology(
-                  action === "move"
-                    ? {
-                        ...resting,
-                        activity: "walk",
-                        heartRate: 98,
-                        respiratoryRate: 22,
-                      }
-                    : resting,
-                );
-                setBaseline(
-                  action === "compare"
-                    ? { physiology: resting, site: "finger" }
-                    : null,
-                );
-                chooseSite("wrist");
-                setMode("stream");
-                setMotionExpanded(action === "move");
-                setRunning(true);
-                setDialog(null);
-                setChangeNote(
-                  action === "compare"
-                    ? "Wrist and finger, matched resting settings. Simulated contours illustrate differences, not device accuracy."
-                    : action === "move"
-                      ? "Walking at the wrist. Compare the live PPG with acceleration; this is an illustrative activity preset."
-                      : "Explore the wrist at rest. Everyday wearability is a design goal, not a universal signal-quality ranking.",
-                );
+            if (captured) closeStudio();
+            setTourStep(null);
+            setExperience("explore");
+            setPulseStart(null);
+            setWavelength("green");
+            const resting = {
+              ...DEFAULT_PHYSIOLOGY,
+              age: 32,
+              heartRate: 72,
+            };
+            setPhysiology(
+              action === "move"
+                ? {
+                    ...resting,
+                    activity: "walk",
+                    heartRate: 98,
+                    respiratoryRate: 22,
+                  }
+                : resting,
+            );
+            setBaseline(
+              action === "compare"
+                ? { physiology: resting, site: "finger" }
+                : null,
+            );
+            chooseSite("wrist");
+            setMode("stream");
+            setMotionExpanded(action === "move");
+            setRunning(true);
+            setDialog(null);
+            setChangeNote(
+              action === "compare"
+                ? "Wrist and finger, matched resting settings. Simulated contours illustrate differences, not device accuracy."
+                : action === "move"
+                  ? "Walking at the wrist. Compare the live PPG with acceleration; this is an illustrative activity preset."
+                  : "Explore the wrist at rest. Everyday wearability is a design goal, not a universal signal-quality ranking.",
+            );
             setReturnToLearn(true);
-          }} />
+          }}
+        />
       </Modal>
       {dialog === "learn" && (
         <Modal
@@ -1732,7 +1874,10 @@ export default function App() {
       {dialog === "sources" && (
         <Modal
           title="The science behind the signal"
-          onClose={() => { setDialog(sourcesFromLearn ? "guide" : null); setSourcesFromLearn(false); }}
+          onClose={() => {
+            setDialog(sourcesFromLearn ? "guide" : null);
+            setSourcesFromLearn(false);
+          }}
           wide
         >
           <p className="modal-intro">

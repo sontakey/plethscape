@@ -318,7 +318,7 @@ vessel motion, dimensions and light intensity are uncalibrated visual choices.
 
 The controls label example illumination at 530, 660 and 940 nm. Green illustrates
 shallower sampling; red and infrared illustrate deeper sampling, with substantial
-real-world overlap. Infrared is invisible and rendered warm white for visibility.
+real-world overlap. Infrared is invisible and rendered in violet false color for visibility.
 The selected wavelength now changes the light illustration, clean pulse contour and motion-artifact sensitivity. These are explicitly illustrative site-dependent coefficients (see [WAVELENGTHS.md](WAVELENGTHS.md)), not a calibrated multispectral transfer function or universal wavelength-to-waveform rule.
 
 - [Lee et al., 2013](https://pubmed.ncbi.nlm.nih.gov/24110039/): a 12-person

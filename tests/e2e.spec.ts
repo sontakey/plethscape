@@ -75,6 +75,10 @@ test.beforeEach(async ({ page }) => {
   ).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await waitForPaint(ppg(page));
+  // The intro mounts when anatomy becomes ready. Resolve that state before
+  // checking its dismiss button, so a late intro cannot reframe the camera.
+  const anatomy = page.getByTestId("anatomy-canvas");
+  await expect(anatomy).toHaveAttribute("data-body-loaded", "true");
   const explore = page.getByRole("button", { name: "Explore", exact: true });
   if (await explore.isVisible()) {
     await explore.click();
@@ -83,11 +87,11 @@ test.beforeEach(async ({ page }) => {
   // Dismissing the intro leaves the camera on its close-up wrist framing.
   // Reset explicitly and verify the full-body camera, rather than swallowing a
   // failed click and letting later gesture tests start from the wrong view.
-  const anatomy = page.getByTestId("anatomy-canvas");
-  await expect(anatomy).toHaveAttribute("data-body-loaded", "true");
   await page.getByRole("button", { name: "Reset camera", exact: true }).click();
   await expect
-    .poll(async () => Number(await anatomy.getAttribute("data-camera-distance")))
+    .poll(async () =>
+      Number(await anatomy.getAttribute("data-camera-distance")),
+    )
     .toBeGreaterThan(6);
 });
 
@@ -437,10 +441,7 @@ test("a baseline remains saved as physiology changes and can be removed", async 
     name: /^Comparing: Top of wrist · 32y · 530 nm · 72 bpm · Sinus$/,
   });
   await expect(comparison).toBeVisible();
-  await expect(ppg(page)).toHaveAttribute(
-    "aria-label",
-    /Dashed lavender trace/,
-  );
+  await expect(ppg(page)).toHaveAttribute("aria-label", /Dashed purple trace/);
   await page.getByRole("slider", { name: "Age", exact: true }).press("End");
   await expect(comparison).toBeVisible();
   await expect(
@@ -452,11 +453,13 @@ test("a baseline remains saved as physiology changes and can be removed", async 
   ).toBeVisible();
   await expect(ppg(page)).not.toHaveAttribute(
     "aria-label",
-    /Dashed lavender trace/,
+    /Dashed purple trace/,
   );
 });
 
-test("lesson experiments apply young and older pulse settings", async ({ page }) => {
+test("lesson experiments apply young and older pulse settings", async ({
+  page,
+}) => {
   await page.getByRole("button", { name: "Learn", exact: true }).click();
   await page
     .getByRole("button", { name: "Read a heartbeat", exact: true })
@@ -607,7 +610,10 @@ test("desktop and mobile layouts stay within the document viewport", async ({
 
 type WearableCase = readonly [id: string, device: string, siteName: string];
 
-async function verifyWearablePicking(page: Page, cases: readonly WearableCase[]) {
+async function verifyWearablePicking(
+  page: Page,
+  cases: readonly WearableCase[],
+) {
   const anatomy = page.getByTestId("anatomy-canvas");
   await page
     .getByRole("button", { name: "Pause simulation", exact: true })
@@ -647,7 +653,9 @@ async function verifyWearablePicking(page: Page, cases: readonly WearableCase[])
   return anatomy;
 }
 
-test("wrist, finger, and ear close-ups support mesh picking", async ({ page }) => {
+test("wrist, finger, and ear close-ups support mesh picking", async ({
+  page,
+}) => {
   await verifyWearablePicking(page, [
     ["wrist", "Sensor band", "Top of wrist"],
     ["finger", "Smart ring", "Index finger"],

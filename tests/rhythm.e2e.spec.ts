@@ -1,8 +1,4 @@
 import { expect, test, type Page } from "@playwright/test";
-const nav = (page: Page, name: string) =>
-  page
-    .getByRole("navigation", { name: "Main navigation" })
-    .getByRole("button", { name, exact: true });
 const wave = (page: Page) =>
   page.getByRole("img", { name: /^Synthetic streaming PPG waveform/ });
 const hash = async (page: Page) =>
@@ -64,8 +60,10 @@ for (const width of [1440, 390])
     await page
       .getByRole("button", { name: "Compare with sinus rhythm", exact: true })
       .click();
-    if (width < 701)
+    if (width < 701) {
       await page.getByRole("button", { name: "See the signal →" }).click();
+      await page.getByRole("button", { name: "Signal details ↑" }).click();
+    }
     await expect(
       page.getByRole("button", { name: /Comparing:.*Sinus/ }),
     ).toBeVisible();
