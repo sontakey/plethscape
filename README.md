@@ -16,7 +16,7 @@ status are recorded separately in the theme validation notes.
 
 Full 45s video: [plethscape-demo.mp4](docs/media/plethscape-demo.mp4) · [LinkedIn post](https://www.linkedin.com/posts/sontakey_gpt-6-astra-is-absolutely-insane-i-just-activity-7504175548571635714-iVaQ)
 
-![Plethscape screenshot](public/social-preview.png)
+![Plethscape by ChatPPG with its real light workspace and simulated PPG waveform](public/social-preview-light-2026-10-21.png)
 
 ## Why I built this
 
